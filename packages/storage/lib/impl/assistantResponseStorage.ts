@@ -2,21 +2,45 @@ import { StorageEnum } from '../base/enums';
 import { createStorage } from '../base/base';
 import type { BaseStorage } from '../base/types';
 
-type HTMLSnippet = string;
-
-type AssistantResponseStorage = BaseStorage<HTMLSnippet> & {
-  clearSnippet: () => Promise<void>;
+export type AssistantResponse = {
+  id: string;
+  content: string;
 };
 
-const storage = createStorage<HTMLSnippet>('assistant-response-key', '<!-- Default HTML Snippet -->', {
+type AssistantResponseStorageType = BaseStorage<AssistantResponse[]> & {
+  addResponse: (response: AssistantResponse) => Promise<void>;
+  removeResponse: (id: string) => Promise<void>;
+  clearAllResponses: () => Promise<void>;
+};
+
+// Initialize with an empty array or default responses
+const defaultResponses: AssistantResponse[] = [];
+
+const storage = createStorage<AssistantResponse[]>('assistant-response-key', defaultResponses, {
   storageEnum: StorageEnum.Local,
   liveUpdate: true,
 });
 
-// You can extend it with your own methods
-export const assistantResponseStorage: AssistantResponseStorage = {
+// Extend storage with additional methods
+export const assistantResponseStorage: AssistantResponseStorageType = {
   ...storage,
-  clearSnippet: async () => {
-    await storage.set(() => '');
+  
+  // Add a new assistant response
+  addResponse: async (response: AssistantResponse) => {
+    const current = await storage.get();
+    const updated = [...current, response];
+    await storage.set(updated);
+  },
+  
+  // Remove an assistant response by ID
+  removeResponse: async (id: string) => {
+    const current = await storage.get();
+    const updated = current.filter(response => response.id !== id);
+    await storage.set(updated);
+  },
+  
+  // Clear all assistant responses
+  clearAllResponses: async () => {
+    await storage.set([]);
   },
 };
