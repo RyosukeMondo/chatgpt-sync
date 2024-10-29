@@ -30,6 +30,8 @@
     "update-version": "bash update_version.sh"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "eslint-plugin-tailwindcss": "^3.17.4",
     "html-to-text": "^9.0.5",
     "react": "18.3.1",

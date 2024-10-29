@@ -2,13 +2,18 @@ import '@src/Options.css';
 import { useStorage, withErrorBoundary, withSuspense } from '@extension/shared';
 import { exampleThemeStorage, assistantResponseStorage } from '@extension/storage';
 import { Button } from '@extension/ui';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { htmlToText } from 'html-to-text';
+
+// Import necessary libraries for date manipulation
+import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 interface AssistantResponse {
   id: string;
   content: string;
   summary: string;
+  epochTime: number; // Added to store the extracted epoch time
 }
 
 const Options = () => {
@@ -20,12 +25,24 @@ const Options = () => {
 
   // Retrieve stored assistant responses
   const storedResponses = useStorage(assistantResponseStorage);
+  
+  // State for sorting order: 'asc' or 'desc'
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Extract epoch time from the id and store it in the state
   const [assistantResponses, setAssistantResponses] = useState<AssistantResponse[]>(
     Array.isArray(storedResponses)
-      ? storedResponses.map((response: any) => ({
-          ...response,
-          summary: htmlToText(response.content, { wordwrap: 80 }).split('\n')[0],
-        }))
+      ? storedResponses.map((response: any) => {
+          // Extract epoch time using regex
+          console.log('response', response);
+          const match = response.content.match(/assistant-(\d+)-/);
+          const epochTime = match ? parseInt(match[1], 10) : Date.now();
+          return {
+            ...response,
+            summary: htmlToText(response.content, { wordwrap: 80 }).split('\n')[0],
+            epochTime,
+          };
+        })
       : []
   );
 
@@ -47,6 +64,22 @@ const Options = () => {
     }
   };
 
+  // Memoize sorted responses to optimize performance
+  const sortedResponses = useMemo(() => {
+    return [...assistantResponses].sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.epochTime - b.epochTime;
+      } else {
+        return b.epochTime - a.epochTime;
+      }
+    });
+  }, [assistantResponses, sortOrder]);
+
+  // Function to toggle sort order
+  const toggleSortOrder = () => {
+    setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+  };
+
   return (
     <div className={`App ${isLight ? 'bg-slate-50 text-gray-900' : 'bg-gray-800 text-gray-100'}`}>
       <p>
@@ -62,28 +95,53 @@ const Options = () => {
         {assistantResponses.length === 0 ? (
           <p>No assistant responses stored.</p>
         ) : (
-          <ul className="mt-2 space-y-2">
-            {assistantResponses.map(response => (
-              <li key={response.id} className="p-4 bg-gray-100 dark:bg-gray-700 rounded flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium">{response.summary}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    <span className="italic">// Path: Z:/home/rmondo/repos/chatgpt-sync/pages/options/src/Options.tsx</span>
-                  </p>
-                </div>
-                <div className="flex space-x-2">
-                  <Button onClick={() => viewResponse(response)} theme={theme}>
-                    View
-                  </Button>
-                  <Button onClick={() => removeResponse(response.id as string)}
-                  className='ml-4'
-                   theme={theme}>
-                    Remove
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <>
+            <div className="flex justify-end mb-2">
+              <Button onClick={toggleSortOrder} theme={theme}>
+                Sort by Date {sortOrder === 'asc' ? '↑' : '↓'}
+              </Button>
+            </div>
+            <ul className="mt-2 space-y-2">
+              {sortedResponses.map(response => {
+                // Convert epoch time to JST
+                const date = new Date(response.epochTime);
+                console.log('date', date);
+                console.log('response', response);
+                const timeZone = 'Asia/Tokyo';
+                const zonedDate = toZonedTime(date, timeZone);
+                const formattedDate = format(zonedDate, 'yyyy-MM-dd HH:mm:ssXXX');
+
+                return (
+                  <li
+                    key={response.id}
+                    className="p-4 bg-gray-100 dark:bg-gray-700 rounded flex justify-between items-start"
+                  >
+                    <div>
+                      <h3 className="font-medium">{response.summary}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <span className="italic">// Path: Z:/home/rmondo/repos/chatgpt-sync/pages/options/src/Options.tsx</span>
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {formattedDate} JST
+                      </p>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button onClick={() => viewResponse(response)} theme={theme}>
+                        View
+                      </Button>
+                      <Button
+                        onClick={() => removeResponse(response.id as string)}
+                        className="ml-4"
+                        theme={theme}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </div>
 
@@ -105,4 +163,7 @@ const Options = () => {
   );
 };
 
-export default withErrorBoundary(withSuspense(Options, <div> Loading ... </div>), <div> Error Occur </div>);
+export default withErrorBoundary(
+  withSuspense(Options, <div> Loading ... </div>),
+  <div> Error Occur </div>
+);
