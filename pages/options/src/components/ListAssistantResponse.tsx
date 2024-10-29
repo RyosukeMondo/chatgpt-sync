@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@extension/ui';
-import { AssistantResponse } from '../type';
+import { AssistantResponse } from '../types';
 
 interface ListAssistantResponseProps {
   responses: AssistantResponse[];

@@ -10,7 +10,7 @@ import { toZonedTime } from 'date-fns-tz';
 // Import extracted components
 import ListAssistantResponse from './components/ListAssistantResponse';
 import AssistantResponseContent from './components/AssistantResponseContent';
-import { AssistantResponse } from './type';
+import { AssistantResponse } from './types';
 
 const Options = () => {
   const theme = useStorage(exampleThemeStorage);
@@ -27,7 +27,7 @@ const Options = () => {
     Array.isArray(storedResponses)
       ? storedResponses.map((response: any) => {
           // Extract epoch time using regex
-          console.log('response', response);
+          // console.log('response', response);
           const match = response.content.match(/assistant-(\d+)-/);
           const epochTime = match ? parseInt(match[1], 10) : Date.now();
           return {
