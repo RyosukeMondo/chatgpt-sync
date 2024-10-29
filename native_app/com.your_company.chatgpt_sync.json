@@ -1,0 +1,9 @@
+{
+  "name": "com.your_company.chatgpt_sync",
+  "description": "ChatGPT Sync Native Messaging Host",
+  "path": "D:\\repos\\chatgpt-sync\\native_app\\chatgpt_sync_native_app.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://pcejgppplmlmcpjojamefaddlnlaijgh/"
+  ]
+}

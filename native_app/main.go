@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -105,7 +104,7 @@ func saveToFile(path string, code string) error {
 	}
 
 	// Write the code to the file
-	err = ioutil.WriteFile(path, []byte(code), 0644)
+	err = os.WriteFile(path, []byte(code), 0644)
 	if err != nil {
 		log.Printf("Error writing to file %s: %v", path, err)
 		return err
