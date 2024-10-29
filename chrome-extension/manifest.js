@@ -65,6 +65,10 @@ const manifest = deepmerge(
         matches: ['*://*/*'],
       },
     ],
+    // Added native messaging permission
+    native_permissions: {
+      native_hosts: ['com.your_company.chatgpt_sync'],
+    },
   },
   !isFirefox && sidePanelConfig,
 );

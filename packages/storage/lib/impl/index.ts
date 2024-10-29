@@ -1,2 +1,3 @@
 export * from './exampleThemeStorage';
-export * from './assistantResponseStorage'; // Added AssistantResponseStorage
+export * from './assistantResponseStorage';
+export * from './nativeAppPathStorage';

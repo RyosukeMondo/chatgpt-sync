@@ -1,11 +1,9 @@
 import '@src/Options.css';
 import { useStorage, withErrorBoundary, withSuspense } from '@extension/shared';
-import { exampleThemeStorage, assistantResponseStorage } from '@extension/storage';
+import { exampleThemeStorage, assistantResponseStorage, nativeAppPathStorage } from '@extension/storage';
 import { Button } from '@extension/ui';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { htmlToText } from 'html-to-text';
-import { format } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
 
 // Import extracted components
 import ListAssistantResponse from './components/ListAssistantResponse';
@@ -15,19 +13,35 @@ import { AssistantResponse } from './types';
 const Options = () => {
   const theme = useStorage(exampleThemeStorage);
   const isLight = theme === 'light';
-  const logo = isLight ? 'options/logo_horizontal.svg' : 'options/logo_horizontal_dark.svg';
+  const logo = isLight ? 'pages/options/logo_horizontal.svg' : 'pages/options/logo_horizontal_dark.svg';
   const goGithubSite = () =>
     chrome.tabs.create({ url: 'https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite' });
 
   // Retrieve stored assistant responses
   const storedResponses = useStorage(assistantResponseStorage);
+
+  // Retrieve and set native app path
+  const storedNativeAppPath = useStorage(nativeAppPathStorage);
+  const [inputPath, setInputPath] = useState<string>(storedNativeAppPath?.path || '');
   
+  useEffect(() => {
+    // Load the nativeAppPath on component mount
+    const loadPath = async () => {
+      const savedPathObj = await nativeAppPathStorage.get();
+      console.log('loaded nativeAppPath', savedPathObj);
+      setInputPath(savedPathObj.path);
+    };
+    loadPath();
+  }, []);
+
+  console.log('loaded nativeAppPath', storedNativeAppPath);
+  console.log('loaded inputPath', inputPath);
+
   // Extract epoch time from the id and store it in the state
   const [assistantResponses, setAssistantResponses] = useState<AssistantResponse[]>(
     Array.isArray(storedResponses)
       ? storedResponses.map((response: any) => {
           // Extract epoch time using regex
-          // console.log('response', response);
           const match = response.content.match(/assistant-(\d+)-/);
           const epochTime = match ? parseInt(match[1], 10) : Date.now();
           return {
@@ -54,6 +68,13 @@ const Options = () => {
         setSelectedResponse(null);
       }
     }
+  };
+
+  const saveNativeAppPath = async () => {
+    console.log('inputPath', inputPath);
+    await nativeAppPathStorage.setAppPath(inputPath);
+    console.log('Saved inputPath', inputPath);
+    alert('Native app path saved successfully!');
   };
 
   // Memoize sorted responses to optimize performance
@@ -99,8 +120,25 @@ const Options = () => {
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-start h-full">
+          <div className="flex flex-col items-start justify-start h-full space-y-4">
             <p className="text-gray-500">Select a response from the left menu to view its details.</p>
+            <div className="w-full max-w-md">
+              <label htmlFor="nativeAppPath" className="block text-sm font-medium text-gray-700">
+                Native App Path
+              </label>
+              <input
+                type="text"
+                id="nativeAppPath"
+                name="nativeAppPath"
+                value={inputPath}
+                onChange={(e) => setInputPath(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="C:\\path\\to\\native_app.exe"
+              />
+              <Button onClick={saveNativeAppPath} className="mt-2 text-left" theme={theme}>
+                Save Path
+              </Button>
+            </div>
           </div>
         )}
       </main>
