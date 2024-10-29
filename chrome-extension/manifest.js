@@ -28,7 +28,13 @@ const manifest = deepmerge(
     version: packageJson.version,
     description: '__MSG_extensionDescription__',
     host_permissions: ['<all_urls>'],
-    permissions: ['storage', 'scripting', 'tabs', 'notifications'],
+    permissions: [
+      'storage',
+      'scripting',
+      'tabs',
+      'notifications',
+      'nativeMessaging' // Corrected permission
+    ],
     options_page: 'options/index.html',
     background: {
       service_worker: 'background.iife.js',
@@ -65,10 +71,7 @@ const manifest = deepmerge(
         matches: ['*://*/*'],
       },
     ],
-    // Added native messaging permission
-    native_permissions: {
-      native_hosts: ['com.your_company.chatgpt_sync'],
-    },
+    // Removed native_permissions as it is invalid
   },
   !isFirefox && sidePanelConfig,
 );

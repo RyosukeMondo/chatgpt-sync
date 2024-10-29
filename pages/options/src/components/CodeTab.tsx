@@ -30,6 +30,7 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
     }
     return {
       label,
+      fullpath: snippet.fullPath,
       content: snippet.content,
     };
   });
@@ -51,6 +52,7 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
 
   const sendToPath = async () => {
     const codeToSend = tabs[activeTab]?.content || '';
+    const pathToSend = tabs[activeTab]?.fullPath || '';
 
     try {
       // Use the storage utility to get the nativeAppPath object
@@ -66,7 +68,7 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
       }
 
       const message = {
-        path,
+        path: pathToSend,
         code: codeToSend,
       };
 

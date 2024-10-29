@@ -16,6 +16,7 @@ export interface CodeTabProps {
 export interface Tab {
   label: string;
   content: string;
+  fullPath?: string;
 }
 
 export interface CodeSnippet {
