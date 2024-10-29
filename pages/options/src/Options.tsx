@@ -4,10 +4,12 @@ import { exampleThemeStorage, assistantResponseStorage } from '@extension/storag
 import { Button } from '@extension/ui';
 import React, { useState, useMemo } from 'react';
 import { htmlToText } from 'html-to-text';
-
-// Import necessary libraries for date manipulation
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+
+// Import extracted components
+import ListAssistantResponse from './components/ListAssistantResponse';
+import AssistantResponseContent from './components/AssistantResponseContent';
 
 interface AssistantResponse {
   id: string;
@@ -80,85 +82,84 @@ const Options = () => {
     setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
   };
 
+  // State for active menu item
+  const [activeMenu, setActiveMenu] = useState<'responses' | 'settings'>('responses');
+
   return (
-    <div className={`App ${isLight ? 'bg-slate-50 text-gray-900' : 'bg-gray-800 text-gray-100'}`}>
-      <p>
-        Edit <code>pages/options/src/Options.tsx</code>
-      </p>
-      <div className="mt-4">
-        <Button onClick={exampleThemeStorage.toggle} theme={theme}>
-          Toggle Theme
-        </Button>
-      </div>
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold">Assistant Responses</h2>
-        {assistantResponses.length === 0 ? (
-          <p>No assistant responses stored.</p>
-        ) : (
-          <>
-            <div className="flex justify-end mb-2">
-              <Button onClick={toggleSortOrder} theme={theme}>
-                Sort by Date {sortOrder === 'asc' ? '↑' : '↓'}
+    <div className={`flex h-screen ${isLight ? 'bg-slate-50 text-gray-900' : 'bg-gray-800 text-gray-100'}`}>
+      {/* Left Side Menu */}
+      <aside className="w-64 bg-gray-200 dark:bg-gray-900 p-4">
+        <div className="mb-6">
+          <img src={logo} alt="Logo" className="w-full" />
+        </div>
+        <nav>
+          <ul>
+            <li>
+              <button
+                className={`w-full text-left px-2 py-1 rounded ${
+                  activeMenu === 'responses' ? 'bg-gray-300 dark:bg-gray-700' : 'hover:bg-gray-300 dark:hover:bg-gray-700'
+                }`}
+                onClick={() => setActiveMenu('responses')}
+              >
+                Assistant Responses
+              </button>
+            </li>
+            <li className="mt-2">
+              <button
+                className={`w-full text-left px-2 py-1 rounded ${
+                  activeMenu === 'settings' ? 'bg-gray-300 dark:bg-gray-700' : 'hover:bg-gray-300 dark:hover:bg-gray-700'
+                }`}
+                onClick={() => setActiveMenu('settings')}
+              >
+                Settings
+              </button>
+            </li>
+          </ul>
+        </nav>
+        <div className="mt-6">
+          <Button onClick={goGithubSite} theme={theme}>
+            GitHub
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6 overflow-auto">
+        {activeMenu === 'responses' && (
+          <ListAssistantResponse
+            responses={sortedResponses}
+            onSelect={viewResponse}
+            onRemove={removeResponse}
+            sortOrder={sortOrder}
+            toggleSortOrder={toggleSortOrder}
+            theme={theme}
+          />
+        )}
+
+        {activeMenu === 'settings' && (
+          <div>
+            <h2 className="text-lg font-semibold">Settings</h2>
+            {/* Add your settings components or content here */}
+            <div className="mt-4">
+              <Button onClick={exampleThemeStorage.toggle} theme={theme}>
+                Toggle Theme
               </Button>
             </div>
-            <ul className="mt-2 space-y-2">
-              {sortedResponses.map(response => {
-                // Convert epoch time to JST
-                const date = new Date(response.epochTime);
-                console.log('date', date);
-                console.log('response', response);
-                const timeZone = 'Asia/Tokyo';
-                const zonedDate = toZonedTime(date, timeZone);
-                const formattedDate = format(zonedDate, 'yyyy-MM-dd HH:mm:ssXXX');
-
-                return (
-                  <li
-                    key={response.id}
-                    className="p-4 bg-gray-100 dark:bg-gray-700 rounded flex justify-between items-start"
-                  >
-                    <div>
-                      <h3 className="font-medium">{response.summary}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        <span className="italic">// Path: Z:/home/rmondo/repos/chatgpt-sync/pages/options/src/Options.tsx</span>
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {formattedDate} JST
-                      </p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button onClick={() => viewResponse(response)} theme={theme}>
-                        View
-                      </Button>
-                      <Button
-                        onClick={() => removeResponse(response.id as string)}
-                        className="ml-4"
-                        theme={theme}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </>
-        )}
-      </div>
-
-      {selectedResponse && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-lg max-w-lg w-full">
-            <h3 className="text-xl font-semibold mb-4">Response Details</h3>
-            <div
-              className="prose dark:prose-dark overflow-auto max-h-80"
-              dangerouslySetInnerHTML={{ __html: selectedResponse.content }}
-            />
-            <button onClick={closeModal} className="mt-4 btn btn-secondary">
-              Close
-            </button>
           </div>
-        </div>
-      )}
+        )}
+
+        {selectedResponse && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-lg max-w-3xl w-full">
+              <h3 className="text-xl font-semibold mb-4">Response Details</h3>
+              <AssistantResponseContent content={selectedResponse.content} />
+              <button onClick={closeModal} className="mt-4 btn btn-secondary">
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
