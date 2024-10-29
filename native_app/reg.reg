@@ -1,0 +1,4 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\Google\Chrome\NativeMessagingHosts\com.your_company.chatgpt_sync]
+@="C:\\Users\\ryosu\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\NativeMessagingHosts\\com.your_company.chatgpt_sync.json"
