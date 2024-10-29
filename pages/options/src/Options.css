@@ -1,5 +1,5 @@
 #app-container {
-  text-align: center;
+  /* Removed text-align: center to allow left alignment */
   width: 100vw;
   height: 100vh;
 }
@@ -15,16 +15,15 @@
   font-size: calc(10px + 2vmin);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  /* Removed align-items and justify-content to prevent center alignment */
 }
 
 code {
-  background: rgba(148, 163, 184, 0.5);
+  background: black;
+  color: white;
   border-radius: 0.25rem;
   padding: 0.2rem 0.5rem;
 }
-
 
 .tabs {
   display: flex;
@@ -46,4 +45,32 @@ code {
 
 .tab:hover {
   background-color: #cbd5e1;
+}
+
+/* Additional Styles for Side Menu and Main Content */
+aside {
+  /* Ensures the sidebar doesn't overflow */
+  height: 100vh;
+}
+
+main {
+  /* Scrollable main content */
+  overflow-y: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .flex {
+    flex-direction: column;
+  }
+
+  aside {
+    width: 100%;
+    height: auto;
+  }
+}
+
+/* Enforce left text alignment globally */
+body, .App, aside, main, .tabs, .tab, h2, h3, p, li, button {
+  text-align: left;
 }

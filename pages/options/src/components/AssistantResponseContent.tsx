@@ -14,16 +14,17 @@ const AssistantResponseContent: React.FC<AssistantResponseContentProps> = ({ con
     const doc = parser.parseFromString(content, 'text/html');
     const codeElements = Array.from(doc.querySelectorAll('code'));
     const snippets = codeElements.map(code => code.textContent || '');
-    setCodeSnippets(snippets);
+    const filteredSnippets = snippets.filter(snippet => snippet.trim().length > 100);
+    setCodeSnippets(filteredSnippets);
     setActiveTab(0);
   }, [content]);
 
   if (codeSnippets.length === 0) {
-    return <p>No code snippets found in this response.</p>;
+    return <p className="text-left">No code snippets found in this response.</p>;
   }
 
   return (
-    <div>
+    <div className="text-left">
       <div className="tabs">
         {codeSnippets.map((_, index) => (
           <button

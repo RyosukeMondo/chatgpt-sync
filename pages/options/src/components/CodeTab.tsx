@@ -19,11 +19,11 @@ const CodeTab: React.FC<CodeTabProps> = ({ code }) => {
   };
 
   return (
-    <div>
-      <pre className="bg-gray-200 dark:bg-gray-700 p-4 rounded overflow-auto">
+    <div className="text-left">
+      <pre className="bg-gray-900 dark:bg-gray-700 p-4 rounded overflow-auto">
         <code>{code}</code>
       </pre>
-      <Button onClick={copyToClipboard} className="mt-2" theme="primary">
+      <Button onClick={copyToClipboard} className="mt-2 text-left" theme="primary">
         Copy to Clipboard
       </Button>
     </div>
