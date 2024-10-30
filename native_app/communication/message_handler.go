@@ -13,6 +13,12 @@ func HandleMessage(msg interface{}) {
 	case SaveToPathRequest:
 		response := HandleSaveToPath(req)
 		SendMessage(response)
+	case GetCodeTreeRequest:
+		response := HandleGetCodeTree(req)
+		SendMessage(response)
+	case GetContentsRequest:
+		response := HandleGetContents(req)
+		SendMessage(response)
 	// 他のケースを追加
 	default:
 		log.Printf("不明なメッセージタイプ")
@@ -31,7 +37,7 @@ func ReadMessage() (interface{}, error) {
 
 	kind, ok := raw["kind"].(string)
 	if !ok {
-		return nil, fmt.Errorf("invalid message format")
+		return nil, fmt.Errorf("invalid message format: 'kind' field is missing or not a string")
 	}
 
 	switch MessageKind(kind) {
@@ -41,9 +47,21 @@ func ReadMessage() (interface{}, error) {
 			return nil, err
 		}
 		return req, nil
+	case GetCodeTree:
+		var req GetCodeTreeRequest
+		if err := mapToStruct(raw, &req); err != nil {
+			return nil, err
+		}
+		return req, nil
+	case GetContents:
+		var req GetContentsRequest
+		if err := mapToStruct(raw, &req); err != nil {
+			return nil, err
+		}
+		return req, nil
 	// 他のケースを追加
 	default:
-		return nil, fmt.Errorf("不明なメッセージ種別: %s", kind)
+		return nil, fmt.Errorf("unsupported message kind: %s", kind)
 	}
 }
 

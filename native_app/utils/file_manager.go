@@ -24,3 +24,32 @@ func SaveToFile(path string, code string) error {
 	log.Printf("ファイルを正常に保存しました: %s", path)
 	return nil
 }
+
+// コードツリーを取得する
+func GetCodeTree(path string) ([]string, error) {
+	var files []string
+	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			files = append(files, p)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("コードツリーの取得エラー: %v", err)
+		return nil, err
+	}
+	return files, nil
+}
+
+// ファイルの内容を取得する
+func GetContents(path string) (string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("ファイル %s の読み込みエラー: %v", path, err)
+		return "", err
+	}
+	return string(content), nil
+}
