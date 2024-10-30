@@ -1,3 +1,3 @@
-module chatgpt_sync_native_app
+module chatgpt_sync
 
-go 1.18
+go 1.23.2
