@@ -4,8 +4,24 @@ import (
     "encoding/json"
     "fmt"
     "io"
+    "log"
     "os"
 )
+
+
+func HandleMessage(msg interface{}) {
+    switch req := msg.(type) {
+    case SaveToPathRequest:
+        response := HandleSaveToPath(req)
+        SendMessage(response)
+    default:
+        log.Printf("不明なメッセージタイプ")
+        SendMessage(map[string]string{
+            "status":  "error",
+            "message": "不明なメッセージタイプです。",
+        })
+    }
+}
 
 func ReadMessage() (interface{}, error) {
     var raw map[string]interface{}
