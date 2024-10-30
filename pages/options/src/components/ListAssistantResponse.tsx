@@ -53,7 +53,7 @@ const ListAssistantResponse: React.FC<ListAssistantResponseProps> = ({
                 <Button
                   onClick={() => onRemove(response.id)}
                   className="mt-1 text-xs text-left"
-                  theme={theme}
+                  theme={'light'}
                 >
                   Remove
                 </Button>
