@@ -30,7 +30,7 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
     }
     return {
       label,
-      fullpath: snippet.fullPath,
+      fullPath: snippet.fullPath,
       content: snippet.content,
     };
   });
