@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@extension/ui';
 import { useCodeSnippet } from './useCodeSnippet';
 import { CodeTabProps, Tab } from '../types';
-import { nativeAppPathStorage } from '@extension/storage'; // Import the storage utility
+import { sendToPath } from './communication/sendToPath';
 
 const getOrdinal = (n: number): string => {
   const s = ['th', 'st', 'nd', 'rd'],
@@ -50,41 +50,10 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
     );
   };
 
-  const sendToPath = async () => {
+  const handleSendToPath = () => {
     const codeToSend = tabs[activeTab]?.content || '';
     const pathToSend = tabs[activeTab]?.fullPath || '';
-
-    try {
-      // Use the storage utility to get the nativeAppPath object
-      const pathObj = await nativeAppPathStorage.get();
-      const path = pathObj?.path;
-
-      console.log('Loaded nativeAppPath:', pathObj);
-      console.log('Loaded inputPath:', path);
-
-      if (!path) {
-        alert('Native app path is not set. Please configure it in the options.');
-        return;
-      }
-
-      const message = {
-        path: pathToSend,
-        code: codeToSend,
-      };
-
-      chrome.runtime.sendNativeMessage('com.your_company.chatgpt_sync', message, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error('Error sending native message:', chrome.runtime.lastError);
-          alert('Failed to send code to native app.');
-        } else {
-          console.log('Native app response:', response);
-          alert('Code successfully sent to native app!');
-        }
-      });
-    } catch (error) {
-      console.error('Error retrieving nativeAppPath:', error);
-      alert('An error occurred while retrieving the native app path.');
-    }
+    sendToPath(pathToSend, codeToSend);
   };
 
   return (
@@ -117,7 +86,7 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
               <Button onClick={copyToClipboard} className="text-left" theme="light">
                 Copy to Clipboard
               </Button>
-              <Button onClick={sendToPath} className="text-left" theme="light">
+              <Button onClick={handleSendToPath} className="text-left" theme="light">
                 Send to Path
               </Button>
             </div>

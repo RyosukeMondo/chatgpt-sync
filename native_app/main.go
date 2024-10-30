@@ -1,4 +1,4 @@
-package main
+package chatgpt_sync_native_app
 
 import (
 	"bufio"
@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+    "chatgpt_sync_native_app/communication"
 	"path/filepath"
 )
 
 type Message struct {
 	Path string `json:"path"`
 	Code string `json:"code"`
+    Kind string `json:"kind"` // 追加
 }
 
 // Initialize logger
@@ -141,39 +143,27 @@ func main() {
 			break
 		}
 
-		if msg.Path == "" || msg.Code == "" {
-			log.Println("Received message with empty Path or Code.")
-			err = sendMessage(map[string]string{
-				"status":  "error",
-				"message": "Path or code is empty.",
-			})
-			if err != nil {
-				log.Printf("Failed to send error message: %v", err)
-			}
-			continue
-		}
-
-		log.Printf("Processing message for Path: %s", msg.Path)
-		err = saveToFile(msg.Path, msg.Code)
-		if err != nil {
-			log.Printf("Failed to save file: %v", err)
-			err = sendMessage(map[string]string{
-				"status":  "error",
-				"message": fmt.Sprintf("Failed to save file: %v", err),
-			})
-			if err != nil {
-				log.Printf("Failed to send error message: %v", err)
-			}
-			continue
-		}
-
-		err = sendMessage(map[string]string{
-			"status":  "success",
-			"message": "File saved successfully.",
-		})
-		if err != nil {
-			log.Printf("Failed to send success message: %v", err)
-		}
+        switch msg.Kind {
+        case "SAVE_TO_PATH":
+            var request communication.SaveToPathRequest
+            err := json.Unmarshal([]byte(msg.Code), &request)
+            if err != nil {
+                log.Printf("Error unmarshalling SaveToPathRequest: %v", err)
+                sendMessage(communication.SaveToPathResponse{
+                    Status: "fail",
+                    Error:  err.Error(),
+                })
+                continue
+            }
+            response := communication.HandleSaveToPath(request)
+            sendMessage(response)
+        default:
+            log.Printf("Unknown message kind: %s", msg.Kind)
+            sendMessage(map[string]string{
+                "status":  "error",
+                "message": "Unknown message kind.",
+            })
+        }
 	}
 
 	log.Println("Application terminated.")
