@@ -18,6 +18,8 @@ export const sendToPath = async (fullPath: string, content: string): Promise<voi
       content: content,
     };
 
+    console.log('Sending message to native app:', JSON.stringify(message));
+
     chrome.runtime.sendNativeMessage('com.your_company.chatgpt_sync', message, (response: SaveToPathResponse) => {
       if (chrome.runtime.lastError) {
         console.error('Error sending native message:', chrome.runtime.lastError);
