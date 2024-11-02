@@ -1,11 +1,8 @@
 import { StorageEnum } from '../base/enums';
 import { createStorage } from '../base/base';
 import type { BaseStorage } from '../base/types';
+import type { AssistantResponse } from '../../../../types/types'; 
 
-export type AssistantResponse = {
-  id: string;
-  content: string;
-};
 
 type AssistantResponseStorageType = BaseStorage<AssistantResponse[]> & {
   addResponse: (response: AssistantResponse) => Promise<void>;

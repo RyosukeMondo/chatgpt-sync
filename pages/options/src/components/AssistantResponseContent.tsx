@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CodeTab from './CodeTab';
-import { AssistantResponseContentProps, AssistantResponse } from '../types';
+import { AssistantResponseContentProps, AssistantResponse } from '../../../../types/types';
 import { useStorage } from '@extension/shared';
 import { assistantResponseStorage } from '@extension/storage';
 import { htmlToText } from 'html-to-text';
@@ -41,21 +41,21 @@ const AssistantResponseContent = ({ }) => {
   };
 
   return (
-    <div>
+    <div className="assistant-content fixed w-full">
       <ListAssistantResponse
         responses={[...assistantResponses].sort((a, b) => b.epochTime - a.epochTime)}
         onSelect={viewResponse}
         onRemove={removeResponse}
       />
       {selectedResponse && (
-        <div>
+        <div className="response-details">
           <h2 className="text-lg font-semibold mb-4">Response Details</h2>
           <div
             className="prose dark:prose-dark overflow-auto max-h-80 mb-4"
             dangerouslySetInnerHTML={{ __html: selectedResponse.content }}
           />
           <CodeTab htmlContent={selectedResponse.content} />
-          <Button onClick={() => setSelectedResponse(null)} className="mt-4 text-left" >
+          <Button onClick={() => setSelectedResponse(null)} className="mt-4 text-left">
             Deselect
           </Button>
         </div>
@@ -64,4 +64,4 @@ const AssistantResponseContent = ({ }) => {
   );
 };
 
-export default AssistantResponseContent;
+export default AssistantResponseContent; 
