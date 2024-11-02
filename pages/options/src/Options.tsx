@@ -33,7 +33,7 @@ const Options = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto text-left">
-        <div className="flex flex-col items-start justify-start h-full w-full space-y-4 mb-4">
+        <div className="flex flex-col items-start justify-start h-full space-y-4">
           <p className="text-gray-500">Select a response from the left menu to view its details.</p>
           {activeContent === 'input' && <InputPathSetting />}
           {activeContent === 'assistant' && <AssistantResponseContent />}

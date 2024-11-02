@@ -6,6 +6,7 @@ import { assistantResponseStorage } from '@extension/storage';
 import { htmlToText } from 'html-to-text';
 import { Button } from '@extension/ui';
 import ListAssistantResponse from './ListAssistantResponse';
+import './AssistantResponseContent.css';
 
 const AssistantResponseContent = ({ }) => {
   const storedResponses = useStorage(assistantResponseStorage);
@@ -41,7 +42,7 @@ const AssistantResponseContent = ({ }) => {
   };
 
   return (
-    <div className="assistant-content fixed w-full">
+    <div className="assistant-content fixed w-full assistant-content">
       <ListAssistantResponse
         responses={[...assistantResponses].sort((a, b) => b.epochTime - a.epochTime)}
         onSelect={viewResponse}
