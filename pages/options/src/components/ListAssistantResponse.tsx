@@ -6,14 +6,12 @@ interface ListAssistantResponseProps {
   responses: AssistantResponse[];
   onSelect: (response: AssistantResponse) => void;
   onRemove: (id: string) => void;
-  theme: string;
 }
 
 const ListAssistantResponse: React.FC<ListAssistantResponseProps> = ({
   responses,
   onSelect,
   onRemove,
-  theme,
 }) => {
   return (
     <div className="text-left">
