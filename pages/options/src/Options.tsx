@@ -13,7 +13,7 @@ import { AssistantResponse } from './types';
 const Options = () => {
   const theme = useStorage(exampleThemeStorage);
   const isLight = theme === 'light';
-  const logo = isLight ? 'pages/options/logo_horizontal.svg' : 'pages/options/logo_horizontal_dark.svg';
+  const logo = 'chatgpt-sync.png';
   const goGithubSite = () =>
     chrome.tabs.create({ url: 'https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite' });
 
@@ -34,8 +34,8 @@ const Options = () => {
     loadPath();
   }, []);
 
-  console.log('loaded nativeAppPath', storedNativeAppPath);
-  console.log('loaded inputPath', inputPath);
+  // console.log('loaded nativeAppPath', storedNativeAppPath);
+  // console.log('loaded inputPath', inputPath);
 
   // Extract epoch time from the id and store it in the state
   const [assistantResponses, setAssistantResponses] = useState<AssistantResponse[]>(
