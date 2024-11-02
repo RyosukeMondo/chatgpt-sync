@@ -1,4 +1,4 @@
-package chatgpt_sync
+package main
 
 import (
 	"fmt"
