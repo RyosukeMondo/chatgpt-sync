@@ -10,9 +10,6 @@ const Options = () => {
   const theme = useStorage(exampleThemeStorage);
   const isLight = theme === 'light';
   const logo = 'chatgpt-sync.png';
-  const goGithubSite = () =>
-    chrome.tabs.create({ url: 'https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite' });
-
   return (
     <div className={`flex h-screen ${isLight ? 'bg-slate-50 text-gray-900' : 'bg-gray-800 text-gray-100'}`}>
       {/* Left Side Menu */}

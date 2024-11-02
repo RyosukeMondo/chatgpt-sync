@@ -19,7 +19,7 @@ const ListAssistantResponse: React.FC<ListAssistantResponseProps> = ({
       {responses.length === 0 ? (
         <p className="text-sm text-gray-500">No responses stored.</p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="space-y-1 overflow-y-auto max-h-64">
           {responses.map(response => {
             const date = new Date(response.epochTime);
             const timeZone = 'Asia/Tokyo';
