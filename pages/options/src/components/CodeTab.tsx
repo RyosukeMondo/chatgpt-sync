@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@extension/ui';
 import { useCodeSnippet } from './useCodeSnippet';
 import { CodeTabProps, Tab } from '../types';
@@ -35,7 +35,12 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
     };
   });
 
-  const [activeTab, setActiveTab] = React.useState(0);
+  const [activeTab, setActiveTab] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredTabs = tabs.filter(tab =>
+    tab.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const copyToClipboard = () => {
     const codeToCopy = tabs[activeTab]?.content || '';
@@ -58,21 +63,26 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
 
   return (
     <div className="code-tab-container">
-      {/* Tabs */}
-      <div className="tabs flex border-b">
-        {tabs.map((tab, index) => (
-          <button
-            key={index}
-            className={`py-2 px-4 -mb-px ${
-              activeTab === index
-                ? 'border-b-2 border-blue-500 text-blue-500'
-                : 'text-gray-500 hover:text-blue-500'
-            }`}
-            onClick={() => setActiveTab(index)}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Dropdown with Search */}
+      <div className="dropdown-container flex items-center border-b">
+        <input
+          type="text"
+          placeholder="Search tabs..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="p-2 border rounded-l"
+        />
+        <select
+          value={activeTab}
+          onChange={(e) => setActiveTab(Number(e.target.value))}
+          className="p-2 border-t border-b border-r rounded-r"
+        >
+          {filteredTabs.map((tab, index) => (
+            <option key={index} value={tabs.indexOf(tab)}>
+              {tab.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Active Tab Content */}
