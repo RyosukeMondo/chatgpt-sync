@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { codeTreeStorage } from '@extension/storage/lib/impl/codeTreeStorage';
-import GetCodeTree from './communication/GetCodeTree';
 import { codeBasePathStorage } from '@extension/storage/lib/impl/codeBasePathStorage';
 import { sendGetCodeTree } from './communication/sendGetCodeTree';
 import Tree from 'rc-tree';
@@ -97,7 +96,6 @@ const CodeBase: React.FC = () => {
       </aside>
       <main style={{ padding: '20px', flex: 1 }}>
         <h2>コードベースページ</h2>
-        <GetCodeTree targetPath={targetPath} />
         <p>ここに将来の実装のためのプレースホルダーコンテンツを追加します。</p>
       </main>
     </div>
