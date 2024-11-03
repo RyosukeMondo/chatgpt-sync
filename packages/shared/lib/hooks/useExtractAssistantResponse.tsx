@@ -2,13 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { assistantResponseStorage } from '@extension/storage';
 import { useStorage } from './useStorage';
 import { htmlToText } from 'html-to-text';
-
-type AssistantResponse = {
-  id: string;
-  content: string;
-  summary: string;
-  epochTime: number;
-};
+import { AssistantResponse } from '../../../../types/types';
+import useConvertToMarkdown from './useConvertToMarkdown';
 
 const sentResponseIds = new Set<string>();
 
@@ -30,6 +25,7 @@ function extractAssistantResponses(): AssistantResponse[] {
         content: responseText,
         summary,
         epochTime,
+        markdown: useConvertToMarkdown(responseText),
       });
       sentResponseIds.add(id);
       console.log(`Assistant response detected: ID ${id}`);
@@ -80,6 +76,7 @@ export function useExtractAssistantResponse() {
                 content: responseText,
                 summary,
                 epochTime,
+                markdown: useConvertToMarkdown(responseText),
               };
               sentResponseIds.add(uniqueId);
               const updatedResponses = [...(storedResponses || []), response];

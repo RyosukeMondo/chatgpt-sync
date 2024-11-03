@@ -2,7 +2,8 @@ export interface AssistantResponse {
   id: string;
   content: string;
   summary: string;
-  epochTime: number; // Added to store the extracted epoch time
+  epochTime: number;
+  markdown: string;
 }
 
 export interface AssistantResponseContentProps {
@@ -30,34 +31,34 @@ export interface UseCodeSnippetResult {
 }
 
 export interface SaveToPathRequest {
-    kind: 'SAVE_TO_PATH';
-    filePath: string;
-    content: string;
+  kind: 'SAVE_TO_PATH';
+  filePath: string;
+  content: string;
 }
 
 export interface SaveToPathResponse {
-    status: 'success' | 'fail';
-    error?: string;
+  status: 'success' | 'fail';
+  error?: string;
 }
 
 export interface GetCodeTreeRequest {
-    kind: 'GET_CODE_TREE';
-    target_path: string;
+  kind: 'GET_CODE_TREE';
+  target_path: string;
 }
 
 export interface GetCodeTreeResponse {
-    repositories: string[];
-    error?: string;
+  repositories: string[];
+  error?: string;
 }
 
 export interface GetContentsRequest {
-    kind: 'GET_CONTENTS';
-    filePaths: string[];
+  kind: 'GET_CONTENTS';
+  filePaths: string[];
 }
 
 export interface GetContentsResponse {
-    contents: string[];
-    error?: string;
+  contents: string[];
+  error?: string;
 }
 
 export interface FileNode {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CodeTab from './CodeTab';
+import MarkdownPreview from './MarkdownPreview';
 import { AssistantResponse } from '../../../../types/types';
 import { useStorage } from '@extension/shared';
 import { assistantResponseStorage } from '@extension/storage';
@@ -16,6 +17,7 @@ const AssistantResponseContent = () => {
   const [selectedResponse, setSelectedResponse] = useState<AssistantResponse | null>(null);
 
   const viewResponse = (response: AssistantResponse) => {
+    console.log(response);
     setSelectedResponse(response);
   };
 
@@ -40,10 +42,17 @@ const AssistantResponseContent = () => {
       {selectedResponse && (
         <div className="response-details">
           <h2 className="text-lg font-semibold mb-4">Response Details</h2>
-          <div
-            className="prose dark:prose-dark overflow-auto max-h-80 mb-4"
-            dangerouslySetInnerHTML={{ __html: selectedResponse.content }}
-          />
+          <div className="flex mb-4">
+            <div
+              className="w-1/2 prose dark:prose-dark overflow-auto max-h-80 mr-2"
+              dangerouslySetInnerHTML={{ __html: selectedResponse.content }}
+            />
+            {selectedResponse.markdown && (
+              <div className="w-1/2 overflow-auto max-h-80 ml-2">
+                <MarkdownPreview markdownContent={selectedResponse.markdown} />
+              </div>
+            )}
+          </div>
           <CodeTab htmlContent={selectedResponse.content} />
           <Button onClick={() => setSelectedResponse(null)} className="mt-4 text-left">
             選択解除
