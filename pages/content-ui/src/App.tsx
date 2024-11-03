@@ -3,14 +3,23 @@ import { Button } from '@extension/ui';
 import { useStorage } from '@extension/shared';
 import { exampleThemeStorage } from '@extension/storage';
 import { useExtractAssistantResponse } from '@extension/shared/lib/hooks/useExtractAssistantResponse';
+import { useUpdatePrompt } from '@extension/shared/lib/hooks/useUpdatePrompt';
 
 export default function App() {
   const theme = useStorage(exampleThemeStorage);
-  const { extractAndStore } = useExtractAssistantResponse();
+  const { extractAndStore, isObserving, startObserving, stopObserving } = useExtractAssistantResponse();
+  useUpdatePrompt();
+
+  const handleToggleObserve = () => {
+    if (isObserving) {
+      stopObserving();
+    } else {
+      startObserving();
+    }
+  };
 
   useEffect(() => {
     console.log('content ui loaded');
-    // get body and console.log it
     console.log(document.body);
   }, []);
 
@@ -20,11 +29,11 @@ export default function App() {
         Edit <strong className="text-blue-700">pages/content-ui/src/App.tsx</strong> and save to reload.
       </div>
       <div className="flex gap-2">
-        <Button theme={theme} onClick={exampleThemeStorage.toggle}>
-          Toggle Theme
+        <Button theme={theme} onClick={handleToggleObserve}>
+          {isObserving ? '停止' : '開始'} オブザーバー
         </Button>
         <Button theme={theme} onClick={extractAndStore}>
-          Extract Assistant Responses
+          抽出
         </Button>
       </div>
     </div>

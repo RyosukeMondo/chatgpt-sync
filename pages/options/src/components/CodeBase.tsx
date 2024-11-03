@@ -6,6 +6,8 @@ import Tree from 'rc-tree';
 import 'rc-tree/assets/index.css';
 import CodePreview from './CodePreview';
 import CodeBaseOperationPanel from './CodeBaseOperationPanel'; // 追加
+import { PromptStorage } from '@extension/storage'; // 追加
+import { codeContentsStorage } from '@extension/storage'; // 追加
 
 interface TreeNode {
   title: string;
@@ -99,9 +101,29 @@ const CodeBase: React.FC = () => {
     setSelectedKeys([]); // 追加
   };
 
-  const handleSendToTab = () => {
-    // タブに送信するロジックをここに追加
-    console.log('Send to tab:', prompt);
+  const handleSendToTab = async () => {
+    // 更新
+    try {
+      const storedContents = await codeContentsStorage.get();
+      const contentsMap: { [key: string]: string[] } = {};
+      storedContents.forEach(item => {
+        contentsMap[item.id] = item.contents;
+      });
+
+      const selectedContents = selectedFilePaths.map(path => ({
+        path,
+        content: contentsMap[path] || [],
+      }));
+      const fixed_prompt = '(must include // Path: {actual path} inside your generated code)';
+      const combinedPrompt = `${prompt}\n\n${fixed_prompt}\n${selectedContents
+        .map(file => `// Path: ${file.path}\n${file.content.join('\n')}`)
+        .join('\n\n')}`;
+
+      await PromptStorage.setPrompt(combinedPrompt);
+      console.log('Promptが更新されました。');
+    } catch (error: any) {
+      console.error('Promptの更新に失敗しました:', error);
+    }
   };
 
   return (
