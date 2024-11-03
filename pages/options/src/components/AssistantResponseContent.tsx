@@ -1,27 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import CodeTab from './CodeTab';
-import { AssistantResponseContentProps, AssistantResponse } from '../../../../types/types';
+import { AssistantResponse } from '../../../../types/types';
 import { useStorage } from '@extension/shared';
 import { assistantResponseStorage } from '@extension/storage';
-import { htmlToText } from 'html-to-text';
 import { Button } from '@extension/ui';
 import ListAssistantResponse from './ListAssistantResponse';
 import './AssistantResponseContent.css';
 
-const AssistantResponseContent = ({ }) => {
+const AssistantResponseContent = () => {
   const storedResponses = useStorage(assistantResponseStorage);
   const [assistantResponses, setAssistantResponses] = useState<AssistantResponse[]>(
-    Array.isArray(storedResponses)
-      ? storedResponses.map((response: any) => {
-          const match = response.content.match(/assistant-(\d+)-/);
-          const epochTime = match ? parseInt(match[1], 10) : Date.now();
-          return {
-            ...response,
-            summary: htmlToText(response.content, { wordwrap: 80 }).split('\n')[0],
-            epochTime,
-          };
-        })
-      : []
+    Array.isArray(storedResponses) ? storedResponses : [],
   );
 
   const [selectedResponse, setSelectedResponse] = useState<AssistantResponse | null>(null);
@@ -31,7 +20,7 @@ const AssistantResponseContent = ({ }) => {
   };
 
   const removeResponse = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this response?')) {
+    if (window.confirm('このレスポンスを削除してもよろしいですか？')) {
       const updatedResponses = assistantResponses.filter(response => response.id !== id);
       setAssistantResponses(updatedResponses);
       await assistantResponseStorage.removeResponse(id);
@@ -57,7 +46,7 @@ const AssistantResponseContent = ({ }) => {
           />
           <CodeTab htmlContent={selectedResponse.content} />
           <Button onClick={() => setSelectedResponse(null)} className="mt-4 text-left">
-            Deselect
+            選択解除
           </Button>
         </div>
       )}
@@ -65,4 +54,4 @@ const AssistantResponseContent = ({ }) => {
   );
 };
 
-export default AssistantResponseContent; 
+export default AssistantResponseContent;

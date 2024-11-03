@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { assistantResponseStorage } from '@extension/storage';
 import { useStorage } from './useStorage';
+import { htmlToText } from 'html-to-text';
 
 type AssistantResponse = {
   id: string;
@@ -22,11 +23,13 @@ function extractAssistantResponses(): AssistantResponse[] {
     const responseText = element.outerHTML.trim();
     const id = getElementUniqueId(element);
     if (responseText && id && !sentResponseIds.has(id)) {
+      const summary = htmlToText(responseText, { wordwrap: 80 }).split('\n')[0];
+      const epochTime = Date.now();
       responses.push({
         id,
         content: responseText,
-        summary: '',
-        epochTime: Date.now(),
+        summary,
+        epochTime,
       });
       sentResponseIds.add(id);
       console.log(`Assistant response detected: ID ${id}`);
@@ -69,11 +72,14 @@ export function useExtractAssistantResponse() {
 
             const uniqueId = getElementUniqueId(element) || `id-${Date.now()}`;
             if (!sentResponseIds.has(uniqueId)) {
+              const responseText = element.outerHTML.trim();
+              const summary = htmlToText(responseText, { wordwrap: 80 }).split('\n')[0];
+              const epochTime = Date.now();
               const response: AssistantResponse = {
                 id: uniqueId,
-                content: element.outerHTML.trim(),
-                summary: '',
-                epochTime: Date.now(),
+                content: responseText,
+                summary,
+                epochTime,
               };
               sentResponseIds.add(uniqueId);
               const updatedResponses = [...(storedResponses || []), response];
