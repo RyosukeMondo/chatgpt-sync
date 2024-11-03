@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@extension/ui';
-import { AssistantResponse } from '../types';
+import { AssistantResponse } from '../../../../types/types';
 
 interface ListAssistantResponseProps {
   responses: AssistantResponse[];
@@ -8,19 +8,21 @@ interface ListAssistantResponseProps {
   onRemove: (id: string) => void;
 }
 
-const ListAssistantResponse: React.FC<ListAssistantResponseProps> = ({
-  responses,
-  onSelect,
-  onRemove,
-}) => {
+const ListAssistantResponse: React.FC<ListAssistantResponseProps> = ({ responses, onSelect, onRemove }) => {
+  const [responseList, setResponseList] = useState<AssistantResponse[]>(responses);
+
+  useEffect(() => {
+    setResponseList(responses);
+  }, [responses]);
+
   return (
     <div className="text-left">
       <h3 className="text-md font-semibold mb-2">Responses</h3>
-      {responses.length === 0 ? (
+      {responseList.length === 0 ? (
         <p className="text-sm text-gray-500">No responses stored.</p>
       ) : (
         <ul className="space-y-1 overflow-y-auto max-h-64">
-          {responses.map(response => {
+          {responseList.map(response => {
             const date = new Date(response.epochTime);
             const timeZone = 'Asia/Tokyo';
             const zonedDate = new Intl.DateTimeFormat('en-US', {
@@ -35,24 +37,12 @@ const ListAssistantResponse: React.FC<ListAssistantResponseProps> = ({
             }).format(date);
 
             return (
-              <li
-                key={response.id}
-                className="p-2 bg-gray-100 dark:bg-gray-700 rounded flex flex-col"
-              >
-                <button
-                  onClick={() => onSelect(response)}
-                  className="text-left font-medium text-sm hover:underline"
-                >
+              <li key={response.id} className="p-2 bg-gray-100 dark:bg-gray-700 rounded flex flex-col">
+                <button onClick={() => onSelect(response)} className="text-left font-medium text-sm hover:underline">
                   {response.summary}
                 </button>
-                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                  {zonedDate} JST
-                </p>
-                <Button
-                  onClick={() => onRemove(response.id)}
-                  className="mt-1 text-xs text-left"
-                  theme={'light'}
-                >
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{zonedDate} JST</p>
+                <Button onClick={() => onRemove(response.id)} className="mt-1 text-xs text-left" theme={'light'}>
                   Remove
                 </Button>
               </li>
