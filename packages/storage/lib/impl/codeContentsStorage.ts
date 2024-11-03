@@ -4,7 +4,7 @@ import type { BaseStorage } from '../base/types';
 
 type CodeContents = {
   id: string;
-  lines: string[];
+  contents: string[];
 };
 
 type CodeContentsStorageType = BaseStorage<CodeContents[]> & {
@@ -28,7 +28,7 @@ export const codeContentsStorage: CodeContentsStorageType = {
       const current = await storage.get();
       const index = current.findIndex(item => item.id === content.id);
       if (index !== -1) {
-        current[index].lines = content.lines;
+        current[index].contents = content.contents;
       } else {
         current.push(content);
       }

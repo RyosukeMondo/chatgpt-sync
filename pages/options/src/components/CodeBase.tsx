@@ -4,6 +4,8 @@ import { codeBasePathStorage } from '@extension/storage/lib/impl/codeBasePathSto
 import { sendGetCodeTree } from './communication/sendGetCodeTree';
 import Tree from 'rc-tree';
 import 'rc-tree/assets/index.css';
+import CodePreview from './CodePreview';
+import CodeBaseOperationPanel from './CodeBaseOperationPanel'; // 追加
 
 interface TreeNode {
   title: string;
@@ -15,6 +17,9 @@ interface TreeNode {
 const CodeBase: React.FC = () => {
   const [codeTree, setCodeTree] = useState<TreeNode[]>([]);
   const [targetPath, setTargetPath] = useState<string>('');
+  const [selectedFilePaths, setSelectedFilePaths] = useState<string[]>([]);
+  const [prompt, setPrompt] = useState<string>(''); // 追加
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]); // 追加
 
   useEffect(() => {
     const fetchInitialCodeTree = async () => {
@@ -68,9 +73,13 @@ const CodeBase: React.FC = () => {
     return root.children || [];
   };
 
-  const onSelect = (selectedKeys: React.Key[], info: any) => {
-    console.log('Selected:', selectedKeys, info);
-    // 必要に応じて処理を追加
+  const onSelect = (keys: React.Key[], info: any) => {
+    console.log('Selected:', keys, info);
+    setSelectedKeys(keys); // 追加
+    const leafPaths = info.selectedNodes
+      .filter((node: any) => node.isLeaf)
+      .map((node: any) => node.key.replace('root', targetPath));
+    setSelectedFilePaths(leafPaths);
   };
 
   const handleUpdateTree = async () => {
@@ -85,19 +94,47 @@ const CodeBase: React.FC = () => {
     }
   };
 
+  const handleDeselectAll = () => {
+    setSelectedFilePaths([]);
+    setSelectedKeys([]); // 追加
+  };
+
+  const handleSendToTab = () => {
+    // タブに送信するロジックをここに追加
+    console.log('Send to tab:', prompt);
+  };
+
   return (
-    <div style={{ display: 'flex' }}>
-      <aside style={{ width: '250px', borderRight: '1px solid #ccc', padding: '10px' }}>
-        <h2>コードツリー</h2>
-        <button onClick={handleUpdateTree} style={{ marginBottom: '10px' }}>
-          更新ツリー
-        </button>
-        <Tree treeData={codeTree} onSelect={onSelect} defaultExpandAll />
-      </aside>
-      <main style={{ padding: '20px', flex: 1 }}>
-        <h2>コードベースページ</h2>
-        <p>ここに将来の実装のためのプレースホルダーコンテンツを追加します。</p>
-      </main>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <CodeBaseOperationPanel
+        onDeselectAll={handleDeselectAll}
+        onSendToTab={handleSendToTab}
+        prompt={prompt}
+        setPrompt={setPrompt}
+      />
+      <div style={{ display: 'flex', flex: 1 }}>
+        <aside style={{ width: '250px', borderRight: '1px solid #ccc', padding: '10px' }}>
+          <h2>コードツリー</h2>
+          <button onClick={handleUpdateTree} style={{ marginBottom: '10px' }}>
+            更新ツリー
+          </button>
+          <Tree
+            treeData={codeTree}
+            onSelect={onSelect}
+            selectedKeys={selectedKeys} // 追加
+            defaultExpandAll
+            multiple
+          />
+        </aside>
+        <main style={{ padding: '20px', flex: 1 }}>
+          <h2>コードベースページ</h2>
+          {selectedFilePaths.length > 0 ? (
+            <CodePreview filePaths={selectedFilePaths} />
+          ) : (
+            <p>ここに将来の実装のためのプレースホルダーコンテンツを追加します。</p>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
