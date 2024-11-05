@@ -9,29 +9,43 @@ import (
 	"os"
 )
 
+// HandleMessage processes the incoming message and sends an appropriate response
 func HandleMessage(msg interface{}) {
 	log.Printf("Received message: %+v", msg)
 	switch req := msg.(type) {
 	case SaveToPathRequest:
 		response := HandleSaveToPath(req)
-		SendMessage(response)
+		if err := SendMessage(response); err != nil {
+			log.Printf("メッセージ送信エラー: %v", err)
+			// Optionally, decide whether to continue or terminate
+		}
 	case GetCodeTreeRequest:
 		response := HandleGetCodeTree(req)
-		SendMessage(response)
+		if err := SendMessage(response); err != nil {
+			log.Printf("メッセージ送信エラー: %v", err)
+			// Optionally, decide whether to continue or terminate
+		}
 	case GetContentsRequest:
 		response := HandleGetContents(req)
-		SendMessage(response)
+		if err := SendMessage(response); err != nil {
+			log.Printf("メッセージ送信エラー: %v", err)
+			// Optionally, decide whether to continue or terminate
+		}
 	// 他のケースを追加
 	default:
 		log.Printf("不明なメッセージタイプ: %+v", msg)
-		SendMessage(map[string]string{
+		errorResponse := map[string]string{
 			"status":  "error",
 			"message": "不明なメッセージタイプです。",
-		})
+		}
+		if err := SendMessage(errorResponse); err != nil {
+			log.Printf("メッセージ送信エラー: %v", err)
+			// Optionally, decide whether to continue or terminate
+		}
 	}
 }
 
-// ReadMessage は標準入力からメッセージを読み取ります
+// ReadMessage reads a single message from stdin following the native messaging protocol
 func ReadMessage() (interface{}, error) {
 	var length uint32
 	err := binary.Read(os.Stdin, binary.LittleEndian, &length)
@@ -93,7 +107,7 @@ func ReadMessage() (interface{}, error) {
 	}
 }
 
-// SendMessage はメッセージを標準出力に送信します
+// SendMessage sends a message to stdout following the native messaging protocol
 func SendMessage(msg interface{}) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
@@ -102,21 +116,31 @@ func SendMessage(msg interface{}) error {
 	}
 
 	length := uint32(len(data))
+	// Write the length prefix
 	err = binary.Write(os.Stdout, binary.LittleEndian, length)
 	if err != nil {
 		log.Printf("メッセージ長書き込みエラー: %v", err)
 		return err
 	}
 
+	// Write the actual data
 	n, err := os.Stdout.Write(data)
 	if err != nil {
 		log.Printf("メッセージ送信エラー: %v", err)
 		return err
 	}
 	log.Printf("Sent %d bytes: %s", n, string(data))
+
+	// Flush stdout to ensure the message is sent immediately
+	if err := os.Stdout.Sync(); err != nil {
+		log.Printf("標準出力のフラッシュエラー: %v", err)
+		return err
+	}
+
 	return nil
 }
 
+// mapToStruct converts a map to a specified struct using JSON marshal/unmarshal
 func mapToStruct(m map[string]interface{}, s interface{}) error {
 	bytes, err := json.Marshal(m)
 	if err != nil {

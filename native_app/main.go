@@ -17,7 +17,9 @@ func main() {
 	}
 	defer func() {
 		log.Println("ロガーをシャットダウン中。")
-		logFile.Close()
+		if err := logFile.Close(); err != nil {
+			log.Printf("ロガーのシャットダウン中にエラーが発生しました: %v", err)
+		}
 	}()
 
 	log.Println("アプリケーション開始。")
@@ -26,10 +28,13 @@ func main() {
 		msg, err := communication.ReadMessage()
 		if err != nil {
 			log.Printf("メッセージ読み取りエラー: %v。ループを終了します。", err)
-			communication.SendMessage(map[string]string{
+			errorResponse := map[string]string{
 				"status":  "error",
 				"message": fmt.Sprintf("メッセージの読み取りに失敗しました: %v", err),
-			})
+			}
+			if sendErr := communication.SendMessage(errorResponse); sendErr != nil {
+				log.Printf("エラーメッセージの送信に失敗しました: %v", sendErr)
+			}
 			break
 		}
 

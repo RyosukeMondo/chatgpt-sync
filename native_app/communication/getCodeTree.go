@@ -5,8 +5,11 @@ import (
 	"log"
 )
 
+// HandleGetCodeTree processes the GetCodeTreeRequest and returns a GetCodeTreeResponse
 func HandleGetCodeTree(req GetCodeTreeRequest) GetCodeTreeResponse {
+	log.Printf("Handling GetCodeTreeRequest for path: %s", req.TargetPath)
 	if req.TargetPath == "" {
+		log.Println("TargetPathが空です。")
 		return GetCodeTreeResponse{
 			Repositories: nil,
 			Error:        "TargetPath is empty.",
@@ -22,6 +25,7 @@ func HandleGetCodeTree(req GetCodeTreeRequest) GetCodeTreeResponse {
 		}
 	}
 
+	log.Printf("Successfully retrieved code tree for path: %s", req.TargetPath)
 	return GetCodeTreeResponse{
 		Repositories: repositories,
 		Error:        "",
