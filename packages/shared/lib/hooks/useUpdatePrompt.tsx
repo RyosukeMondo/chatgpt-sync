@@ -27,13 +27,7 @@ export function useUpdatePrompt() {
       if (promptElement) {
         console.log('Found prompt element');
 
-        // Create a paragraph element with the text
-        const p = document.createElement('p');
-        p.textContent = prompt;
-
-        // Clear existing content and append new paragraph
-        promptElement.innerHTML = '';
-        promptElement.appendChild(p);
+        promptElement.innerHTML = prompt;
 
         // Dispatch input event to trigger ProseMirror update
         const inputEvent = new InputEvent('input', {
