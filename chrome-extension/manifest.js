@@ -52,7 +52,7 @@ const manifest = deepmerge(
     },
     content_scripts: [
       {
-        matches: ['http://*/*', 'https://*/*', '<all_urls>'],
+        matches: ['http://chatgpt.com/*', 'https://chatgpt.com/*'],
         js: ['content/index.iife.js'],
       },
       {
@@ -60,7 +60,7 @@ const manifest = deepmerge(
         js: ['content-ui/index.iife.js'],
       },
       {
-        matches: ['http://*/*', 'https://*/*', '<all_urls>'],
+        matches: ['http://chatgpt.com/*', 'https://chatgpt.com/*'],
         css: ['content.css'], // public folder
       },
     ],
