@@ -30,3 +30,10 @@ save to below for default user in chrome.
 ## setup
 
 set path in chrome option page point to native app
+
+## how to build
+
+```
+cd chatgpt-sync/native_app
+go build -o chatgpt_sync_native_app.exe
+```
