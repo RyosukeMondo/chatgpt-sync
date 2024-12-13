@@ -33,7 +33,7 @@ const manifest = deepmerge(
       'scripting',
       'tabs',
       'notifications',
-      'nativeMessaging' // Corrected permission
+      'nativeMessaging', // Corrected permission
     ],
     options_page: 'options/index.html',
     background: {
