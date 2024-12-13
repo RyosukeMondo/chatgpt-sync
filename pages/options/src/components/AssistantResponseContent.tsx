@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CodeTab from './CodeTab';
 import MarkdownPreview from './MarkdownPreview';
 import { AssistantResponse } from '../../../../types/types';
@@ -14,6 +14,12 @@ const AssistantResponseContent: React.FC = () => {
   const [assistantResponses, setAssistantResponses] = useState<AssistantResponse[]>(
     Array.isArray(storedResponses) ? storedResponses : [],
   );
+
+  useEffect(() => {
+    if (Array.isArray(storedResponses)) {
+      setAssistantResponses(storedResponses);
+    }
+  }, [storedResponses]);
 
   const [selectedResponse, setSelectedResponse] = useState<AssistantResponse | null>(null);
 
