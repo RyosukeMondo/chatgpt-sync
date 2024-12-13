@@ -11,6 +11,7 @@ import { codeContentsStorage } from '@extension/storage';
 import { assistantWaitingStorage } from '@extension/storage';
 import { assistantResponseStorage } from '@extension/storage';
 import { useStorage } from '@extension/shared';
+import CodePreview from './CodePreview';
 
 interface TreeNode {
   title: string;
@@ -24,7 +25,7 @@ const CodeBase: React.FC = () => {
   const [targetPath, setTargetPath] = useState<string>('');
   const [selectedFilePaths, setSelectedFilePaths] = useState<string[]>([]);
   const [prompt, setPrompt] = useState<string>('');
-  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>();
   const [statusMessage, setStatusMessage] = useState<string>('');
   const storedResponses = useStorage(assistantResponseStorage);
   const [lastResponseCount, setLastResponseCount] = useState<number>(0);
@@ -120,17 +121,43 @@ const CodeBase: React.FC = () => {
       setStatusMessage('');
     }, 3000);
 
-    // Set waiting state in storage
-    console.log('CodeBase - About to set waiting state to true');
-    await assistantWaitingStorage.set(true);
-    console.log('CodeBase - Waiting state set to true');
-
     try {
       const storedContents = await codeContentsStorage.get();
-      const selectedContents = selectedFilePaths.map(path => {
-        return storedContents.find(content => content.path === path);
+      const contentsMap: { [key: string]: string[] } = {};
+      storedContents.forEach(item => {
+        contentsMap[item.id] = item.contents;
       });
-      console.log('Selected contents:', selectedContents);
+
+      // Filter out empty contents and format each file's content
+      const selectedContents = selectedFilePaths
+        .filter(path => contentsMap[path] && contentsMap[path].length > 0)
+        .map(path => ({
+          path,
+          content: contentsMap[path].join('\n'),
+        }));
+
+      if (selectedContents.length === 0) {
+        console.warn('No valid file contents selected');
+        return;
+      }
+
+      // Create the code block with file paths and contents
+      const codeBlocks = selectedContents.map(file => `// Path: ${file.path}\n${file.content}`).join('\n\n');
+
+      // Construct the final prompt with the required prefix
+      const prefixPrompt = 'Below is the current implementation. Please review and suggest improvements:';
+      const pathInstructionPrompt = '(must include // Path: {actual path} inside your generated code)';
+      const combinedPrompt = [prompt || prefixPrompt, pathInstructionPrompt, codeBlocks].filter(Boolean).join('\n\n');
+
+      // Store prompt in storage
+      console.log('CodeBase - Setting prompt to storage:', combinedPrompt);
+      await PromptStorage.setPrompt(combinedPrompt);
+      console.log('CodeBase - Prompt successfully stored');
+
+      // Set waiting state in storage
+      console.log('CodeBase - About to set waiting state to true');
+      await assistantWaitingStorage.set(true);
+      console.log('CodeBase - Waiting state set to true');
 
       // Store the current responses for comparison
       const currentResponses = await assistantResponseStorage.get();
@@ -156,8 +183,8 @@ const CodeBase: React.FC = () => {
         console.log('CodeBase - Timeout reached, setting waiting state to false');
         await assistantWaitingStorage.set(false);
       }, 30000);
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (error: any) {
+      console.error('Failed to update prompt:', error);
       // Make sure to end waiting state even if there's an error
       console.log('CodeBase - About to set waiting state to false (error case)');
       await assistantWaitingStorage.set(false);
