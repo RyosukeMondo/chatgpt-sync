@@ -4,6 +4,7 @@ import MarkdownPreview from './MarkdownPreview';
 import { AssistantResponse } from '../../../../types/types';
 import { useStorage } from '@extension/shared';
 import { assistantResponseStorage } from '@extension/storage';
+import { assistantWaitingStorage } from '@extension/storage/lib/impl/assistantWaitingStorage';
 import { Button } from '@extension/ui';
 import ListAssistantResponse from './ListAssistantResponse';
 import AssistantResponseOperationPanel from './AssistantResponseOperationPanel';
@@ -11,12 +12,21 @@ import './AssistantResponseContent.css';
 
 const AssistantResponseContent: React.FC = () => {
   const storedResponses = useStorage(assistantResponseStorage);
+  const isWaiting = useStorage(assistantWaitingStorage);
+
+  // Add effect to track isWaiting changes
+  useEffect(() => {
+    console.log('AssistantResponseContent - isWaiting changed:', isWaiting);
+  }, [isWaiting]);
+
+  console.log('AssistantResponseContent - isWaiting:', isWaiting);
   const [assistantResponses, setAssistantResponses] = useState<AssistantResponse[]>(
     Array.isArray(storedResponses) ? storedResponses : [],
   );
 
   useEffect(() => {
     if (Array.isArray(storedResponses)) {
+      console.log('AssistantResponseContent - Responses updated:', storedResponses);
       setAssistantResponses(storedResponses);
     }
   }, [storedResponses]);
@@ -46,6 +56,11 @@ const AssistantResponseContent: React.FC = () => {
 
   return (
     <div className="assistant-content fixed w-full assistant-content">
+      {isWaiting && (
+        <div className="waiting-indicator bg-blue-100 p-2 text-center text-blue-700 fixed top-0 left-0 w-full z-50">
+          応答を待っています...
+        </div>
+      )}
       <ListAssistantResponse
         responses={[...assistantResponses].sort((a, b) => b.epochTime - a.epochTime)}
         onSelect={viewResponse}

@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { codeTreeStorage } from '@extension/storage/lib/impl/codeTreeStorage';
-import { codeBasePathStorage } from '@extension/storage/lib/impl/codeBasePathStorage';
-import { sendGetCodeTree } from './communication/sendGetCodeTree';
+import React, { useState, useEffect } from 'react';
+import CodeTab from './CodeTab';
 import Tree from 'rc-tree';
 import 'rc-tree/assets/index.css';
-import CodePreview from './CodePreview';
-import CodeBaseOperationPanel from './CodeBaseOperationPanel'; // 追加
-import { PromptStorage } from '@extension/storage'; // 追加
-import { codeContentsStorage } from '@extension/storage'; // 追加
+import CodeBaseOperationPanel from './CodeBaseOperationPanel';
+import { sendGetCodeTree } from './communication/sendGetCodeTree';
+import { codeTreeStorage } from '@extension/storage';
+import { codeBasePathStorage } from '@extension/storage';
+import { PromptStorage } from '@extension/storage';
+import { codeContentsStorage } from '@extension/storage';
+import { assistantWaitingStorage } from '@extension/storage';
+import { assistantResponseStorage } from '@extension/storage';
+import { useStorage } from '@extension/shared';
 
 interface TreeNode {
   title: string;
@@ -20,8 +23,17 @@ const CodeBase: React.FC = () => {
   const [codeTree, setCodeTree] = useState<TreeNode[]>([]);
   const [targetPath, setTargetPath] = useState<string>('');
   const [selectedFilePaths, setSelectedFilePaths] = useState<string[]>([]);
-  const [prompt, setPrompt] = useState<string>(''); // 追加
-  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]); // 追加
+  const [prompt, setPrompt] = useState<string>('');
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
+  const [statusMessage, setStatusMessage] = useState<string>('');
+  const storedResponses = useStorage(assistantResponseStorage);
+  const [lastResponseCount, setLastResponseCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (Array.isArray(storedResponses)) {
+      setLastResponseCount(storedResponses.length);
+    }
+  }, [storedResponses]);
 
   useEffect(() => {
     const fetchInitialCodeTree = async () => {
@@ -77,7 +89,7 @@ const CodeBase: React.FC = () => {
 
   const onSelect = (keys: React.Key[], info: any) => {
     console.log('Selected:', keys, info);
-    setSelectedKeys(keys); // 追加
+    setSelectedKeys(keys);
     const leafPaths = info.selectedNodes
       .filter((node: any) => node.isLeaf)
       .map((node: any) => node.key.replace('root', targetPath));
@@ -98,31 +110,58 @@ const CodeBase: React.FC = () => {
 
   const handleDeselectAll = () => {
     setSelectedFilePaths([]);
-    setSelectedKeys([]); // 追加
+    setSelectedKeys([]);
   };
 
   const handleSendToTab = async () => {
-    // 更新
+    // Show status message
+    setStatusMessage('タブに送信しました');
+    setTimeout(() => {
+      setStatusMessage('');
+    }, 3000);
+
+    // Set waiting state in storage
+    console.log('CodeBase - About to set waiting state to true');
+    await assistantWaitingStorage.set(true);
+    console.log('CodeBase - Waiting state set to true');
+
     try {
       const storedContents = await codeContentsStorage.get();
-      const contentsMap: { [key: string]: string[] } = {};
-      storedContents.forEach(item => {
-        contentsMap[item.id] = item.contents;
+      const selectedContents = selectedFilePaths.map(path => {
+        return storedContents.find(content => content.path === path);
       });
+      console.log('Selected contents:', selectedContents);
 
-      const selectedContents = selectedFilePaths.map(path => ({
-        path,
-        content: contentsMap[path] || [],
-      }));
-      const fixed_prompt = '(must include // Path: {actual path} inside your generated code)';
-      const combinedPrompt = `${prompt}\n\n${fixed_prompt}\n${selectedContents
-        .map(file => `// Path: ${file.path}\n${file.content.join('\n')}`)
-        .join('\n\n')}`;
+      // Store the current responses for comparison
+      const currentResponses = await assistantResponseStorage.get();
+      const initialResponsesJson = JSON.stringify(currentResponses);
+      console.log('Initial responses:', initialResponsesJson);
 
-      await PromptStorage.setPrompt(combinedPrompt);
-      console.log('Promptが更新されました。');
-    } catch (error: any) {
-      console.error('Promptの更新に失敗しました:', error);
+      // Set up an interval to check for response changes
+      const checkInterval = setInterval(async () => {
+        const newResponses = await assistantResponseStorage.get();
+        const newResponsesJson = JSON.stringify(newResponses);
+
+        if (newResponsesJson !== initialResponsesJson) {
+          // Responses have changed, clear waiting state
+          console.log('CodeBase - Responses changed, setting waiting state to false');
+          await assistantWaitingStorage.set(false);
+          clearInterval(checkInterval);
+        }
+      }, 1000); // Check every second
+
+      // Set a timeout to clear waiting state after 30 seconds to prevent indefinite waiting
+      setTimeout(async () => {
+        clearInterval(checkInterval);
+        console.log('CodeBase - Timeout reached, setting waiting state to false');
+        await assistantWaitingStorage.set(false);
+      }, 30000);
+    } catch (error) {
+      console.error('Error:', error);
+      // Make sure to end waiting state even if there's an error
+      console.log('CodeBase - About to set waiting state to false (error case)');
+      await assistantWaitingStorage.set(false);
+      console.log('CodeBase - Waiting state set to false (error case)');
     }
   };
 
@@ -134,19 +173,14 @@ const CodeBase: React.FC = () => {
         prompt={prompt}
         setPrompt={setPrompt}
       />
+      {statusMessage && <div className="status-message mt-2 text-green-600">{statusMessage}</div>}
       <div style={{ display: 'flex', flex: 1 }}>
         <aside style={{ width: '250px', borderRight: '1px solid #ccc', padding: '10px' }}>
           <h2>コードツリー</h2>
           <button onClick={handleUpdateTree} style={{ marginBottom: '10px' }}>
             更新ツリー
           </button>
-          <Tree
-            treeData={codeTree}
-            onSelect={onSelect}
-            selectedKeys={selectedKeys} // 追加
-            defaultExpandAll
-            multiple
-          />
+          <Tree treeData={codeTree} onSelect={onSelect} selectedKeys={selectedKeys} defaultExpandAll multiple />
         </aside>
         <main style={{ padding: '20px', flex: 1 }}>
           <h2>コードベースページ</h2>
