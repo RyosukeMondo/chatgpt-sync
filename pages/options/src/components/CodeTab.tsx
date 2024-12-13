@@ -40,9 +40,7 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
-  const filteredTabs = tabs.filter(tab =>
-    tab.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTabs = tabs.filter(tab => tab.label.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const copyToClipboard = () => {
     const codeToCopy = tabs[activeTab]?.content || '';
@@ -50,18 +48,18 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
       () => {
         setLogs(prev => [...prev, 'コードがクリップボードにコピーされました。']);
       },
-      (err) => {
+      err => {
         setLogs(prev => [...prev, 'コードのコピーに失敗しました。']);
         console.error('Clipboard copy failed:', err);
-      }
+      },
     );
   };
 
   const handleSendToPath = async () => {
-    const codeToSend = tabs[activeTab]?.content || '';
     const pathToSend = tabs[activeTab]?.fullPath || '';
+    const content = (tabs[activeTab]?.content || '').replace(/^\/\/ Path:.*?[\/\\].*?\n/, '');
     try {
-      await sendToPath(pathToSend, codeToSend);
+      await sendToPath(pathToSend, content);
       setLogs(prev => [...prev, `パス "${pathToSend}" への送信に成功しました。`]);
     } catch (err) {
       setLogs(prev => [...prev, `パス "${pathToSend}" への送信に失敗しました。`]);
@@ -117,14 +115,13 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
           type="text"
           placeholder="タブを検索..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
           className="p-2 border rounded-l"
         />
         <select
           value={activeTab}
-          onChange={(e) => setActiveTab(Number(e.target.value))}
-          className="p-2 border-t border-b border-r rounded-r"
-        >
+          onChange={e => setActiveTab(Number(e.target.value))}
+          className="p-2 border-t border-b border-r rounded-r">
           {filteredTabs.map((tab, index) => (
             <option key={index} value={tabs.indexOf(tab)}>
               {tab.label}
@@ -140,9 +137,7 @@ const CodeTab: React.FC<CodeTabProps> = ({ htmlContent }) => {
             <pre className={`bg-gray-900 dark:bg-gray-700 p-4 rounded overflow-auto ${isExpanded ? 'h-96' : 'h-48'}`}>
               <code>{tabs[activeTab].content}</code>
             </pre>
-            <div className="mt-2 flex space-x-2">
-              {/* Buttons are moved to Operation Panel */}
-            </div>
+            <div className="mt-2 flex space-x-2">{/* Buttons are moved to Operation Panel */}</div>
           </>
         ) : (
           <p>コードスニペットが利用可能ではありません。</p>
