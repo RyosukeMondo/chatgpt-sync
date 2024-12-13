@@ -6,6 +6,9 @@ import { AssistantResponse } from '../../../../types/types';
 import useConvertToMarkdown from './useConvertToMarkdown';
 
 const sentResponseIds = new Set<string>();
+const STABILITY_THRESHOLD_MS = 3000; // 3 seconds of no changes
+const MAX_RETRIES = 3;
+const RETRY_INTERVAL_MS = 1000;
 
 function getElementUniqueId(element: Element): string {
   return element.getAttribute('data-message-id') || '';
@@ -28,10 +31,11 @@ function extractAssistantResponses(): AssistantResponse[] {
         markdown: useConvertToMarkdown(responseText),
       });
       sentResponseIds.add(id);
-      console.log(`Assistant response detected: ID ${id}`);
     }
   });
-  console.log(`Total new assistant responses extracted: ${responses.length}`);
+  if (responses.length > 0) {
+    console.log(`Found ${responses.length} new assistant response(s)`);
+  }
   return responses;
 }
 
@@ -39,19 +43,79 @@ export function useExtractAssistantResponse() {
   const storedResponses = useStorage(assistantResponseStorage);
   const [isObserving, setIsObserving] = useState(false);
   const observerRef = useRef<MutationObserver | null>(null);
-  const pollingRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const contentStatesRef = useRef<
+    Map<
+      string,
+      {
+        content: string;
+        lastChangeTime: number;
+        retryCount: number;
+        timeoutId?: NodeJS.Timeout;
+      }
+    >
+  >(new Map());
 
   const extractAndStore = useCallback(async () => {
-    console.log('抽出開始');
-    const newResponses = extractAssistantResponses();
-    if (newResponses.length > 0) {
-      // Ensure storedResponses is an array before spreading
-      const currentResponses = Array.isArray(storedResponses) ? storedResponses : [];
-      const updatedResponses = [...currentResponses, ...newResponses];
-      const uniqueResponses = Array.from(new Map(updatedResponses.map(item => [item.id, item])).values());
-      await assistantResponseStorage.set(uniqueResponses);
-      console.log('Assistant responses have been updated in storage.');
-    }
+    const elements = document.querySelectorAll("div[data-message-author-role='assistant']");
+    elements.forEach(element => {
+      const id = getElementUniqueId(element);
+      if (!id || sentResponseIds.has(id)) return;
+
+      const currentContent = element.innerHTML;
+      const state = contentStatesRef.current.get(id);
+      const now = Date.now();
+
+      if (!state) {
+        // New content found
+        contentStatesRef.current.set(id, {
+          content: currentContent,
+          lastChangeTime: now,
+          retryCount: 0,
+        });
+        return;
+      }
+
+      if (currentContent !== state.content) {
+        // Content changed
+        state.content = currentContent;
+        state.lastChangeTime = now;
+        state.retryCount = 0;
+        return;
+      }
+
+      // Content unchanged, check if stable
+      const timeSinceLastChange = now - state.lastChangeTime;
+      if (timeSinceLastChange >= STABILITY_THRESHOLD_MS) {
+        if (state.retryCount < MAX_RETRIES) {
+          // Schedule next check
+          if (state.timeoutId) clearTimeout(state.timeoutId);
+          state.timeoutId = setTimeout(() => {
+            state.retryCount++;
+            extractAndStore();
+          }, RETRY_INTERVAL_MS);
+          return;
+        }
+
+        // Content is stable after retries, store it
+        const responseText = element.outerHTML.trim();
+        const summary = htmlToText(responseText, { wordwrap: 80 }).split('\n')[0];
+        const response: AssistantResponse = {
+          id,
+          content: responseText,
+          summary,
+          epochTime: now,
+          markdown: useConvertToMarkdown(responseText),
+        };
+
+        // Store the response
+        const currentResponses = Array.isArray(storedResponses) ? storedResponses : [];
+        const updatedResponses = [...currentResponses, response];
+        assistantResponseStorage.set(updatedResponses);
+        sentResponseIds.add(id);
+        contentStatesRef.current.delete(id);
+        console.log(`Stored stable response after ${state.retryCount} retries: ${id}`);
+      }
+    });
   }, [storedResponses]);
 
   const handlePolling = useCallback(
@@ -66,8 +130,6 @@ export function useExtractAssistantResponse() {
           console.log(`Unchanged count for ID ${getElementUniqueId(element)}: ${unchangedCount}`);
           if (unchangedCount >= 3) {
             clearInterval(intervalId);
-            pollingRefs.current.delete(getElementUniqueId(element));
-
             const uniqueId = getElementUniqueId(element) || `id-${Date.now()}`;
             if (!sentResponseIds.has(uniqueId)) {
               const responseText = element.outerHTML.trim();
@@ -94,9 +156,6 @@ export function useExtractAssistantResponse() {
           console.log(`Content changed for ID ${getElementUniqueId(element)}, reset unchanged count.`);
         }
       }, 1000);
-
-      pollingRefs.current.set(getElementUniqueId(element), intervalId);
-      console.log(`Started polling for ID ${getElementUniqueId(element)}`);
     },
     [storedResponses],
   );
@@ -158,27 +217,23 @@ export function useExtractAssistantResponse() {
       observerRef.current.disconnect();
       observerRef.current = null;
       setIsObserving(false);
-      console.log('Observing stopped.');
     }
 
-    pollingRefs.current.forEach((intervalId, id) => {
-      clearInterval(intervalId);
-      console.log(`Polling stopped for ID ${id}`);
+    contentStatesRef.current.forEach((state, id) => {
+      if (state.timeoutId) clearTimeout(state.timeoutId);
     });
-    pollingRefs.current.clear();
+    contentStatesRef.current.clear();
   }, []);
 
   useEffect(() => {
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
-        console.log('コンポーネントがアンマウントされ、オブザーバーが停止しました。');
       }
-      pollingRefs.current.forEach((intervalId, id) => {
-        clearInterval(intervalId);
-        console.log(`Polling stopped for ID ${id} due to unmount.`);
+      contentStatesRef.current.forEach(state => {
+        if (state.timeoutId) clearTimeout(state.timeoutId);
       });
-      pollingRefs.current.clear();
+      contentStatesRef.current.clear();
     };
   }, []);
 
