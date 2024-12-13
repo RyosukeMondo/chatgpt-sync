@@ -1,11 +1,11 @@
 {
   "extensionDescription": {
     "description": "Extension description",
-    "message": "Chrome extension boilerplate developed with Vite, React and Typescript"
+    "message": "Send code snippets to local native application and manage responses through browser extension"
   },
   "extensionName": {
     "description": "Extension name",
-    "message": "Chrome extension boilerplate"
+    "message": "ChatGPT Sync"
   },
   "toggleTheme": {
     "message": "Toggle theme"
@@ -13,18 +13,24 @@
   "loading": {
     "message": "Loading..."
   },
-  "greeting": {
-    "description": "Greeting message",
-    "message": "Hello, My name is $NAME$",
-    "placeholders": {
-      "name": {
-        "content": "$1",
-        "example": "John Doe"
-      }
-    }
+  "sendToPath": {
+    "description": "Button text for sending code",
+    "message": "Send to Path"
   },
-  "hello": {
-    "description": "Placeholder example",
-    "message": "Hello $1"
+  "settingsTitle": {
+    "description": "Settings page title",
+    "message": "Native App Settings"
+  },
+  "nativeAppPath": {
+    "description": "Native app path setting label",
+    "message": "Native Application Path"
+  },
+  "responseManagement": {
+    "description": "Response management section title",
+    "message": "Response Management"
+  },
+  "setupComplete": {
+    "description": "Setup completion message",
+    "message": "Extension setup complete"
   }
 }

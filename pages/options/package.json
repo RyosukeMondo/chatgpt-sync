@@ -22,7 +22,8 @@
     "@extension/shared": "workspace:*",
     "@extension/storage": "workspace:*",
     "@extension/ui": "workspace:*",
-    "react-markdown": "^9.0.1"
+    "react-markdown": "^9.0.1",
+    "rc-tree": "^5.0.0"
   },
   "devDependencies": {
     "@extension/tailwindcss-config": "workspace:*",
