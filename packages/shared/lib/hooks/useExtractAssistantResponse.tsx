@@ -45,7 +45,9 @@ export function useExtractAssistantResponse() {
     console.log('抽出開始');
     const newResponses = extractAssistantResponses();
     if (newResponses.length > 0) {
-      const updatedResponses = [...(storedResponses || []), ...newResponses];
+      // Ensure storedResponses is an array before spreading
+      const currentResponses = Array.isArray(storedResponses) ? storedResponses : [];
+      const updatedResponses = [...currentResponses, ...newResponses];
       const uniqueResponses = Array.from(new Map(updatedResponses.map(item => [item.id, item])).values());
       await assistantResponseStorage.set(uniqueResponses);
       console.log('Assistant responses have been updated in storage.');
@@ -79,7 +81,9 @@ export function useExtractAssistantResponse() {
                 markdown: useConvertToMarkdown(responseText),
               };
               sentResponseIds.add(uniqueId);
-              const updatedResponses = [...(storedResponses || []), response];
+              // Ensure storedResponses is an array before spreading
+              const currentResponses = Array.isArray(storedResponses) ? storedResponses : [];
+              const updatedResponses = [...currentResponses, response];
               await assistantResponseStorage.set(updatedResponses);
               console.log(`Assistant response stored after polling: ID ${uniqueId}`);
             }
