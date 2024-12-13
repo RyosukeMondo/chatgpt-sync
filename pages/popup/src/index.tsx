@@ -7,8 +7,8 @@ function init() {
   if (!appContainer) {
     throw new Error('Can not find #app-container');
   }
-  const root = createRoot(appContainer);
 
+  const root = createRoot(appContainer);
   root.render(<Popup />);
 }
 
