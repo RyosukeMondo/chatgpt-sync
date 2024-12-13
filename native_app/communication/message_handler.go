@@ -15,6 +15,7 @@ func HandleMessage(msg interface{}) {
 	switch req := msg.(type) {
 	case SaveToPathRequest:
 		response := HandleSaveToPath(req)
+<<<<<<< Updated upstream
 		if err := SendMessage(response); err != nil {
 			log.Printf("メッセージ送信エラー: %v", err)
 			// Optionally, decide whether to continue or terminate
@@ -31,17 +32,34 @@ func HandleMessage(msg interface{}) {
 			log.Printf("メッセージ送信エラー: %v", err)
 			// Optionally, decide whether to continue or terminate
 		}
+=======
+		SendMessage(response)
+		return
+	case GetCodeTreeRequest:
+		response := HandleGetCodeTree(req)
+		SendMessage(response)
+		return
+	case GetContentsRequest:
+		response := HandleGetContents(req)
+		SendMessage(response)
+		return
+>>>>>>> Stashed changes
 	// 他のケースを追加
 	default:
 		log.Printf("不明なメッセージタイプ: %+v", msg)
 		errorResponse := map[string]string{
 			"status":  "error",
 			"message": "不明なメッセージタイプです。",
+<<<<<<< Updated upstream
 		}
 		if err := SendMessage(errorResponse); err != nil {
 			log.Printf("メッセージ送信エラー: %v", err)
 			// Optionally, decide whether to continue or terminate
 		}
+=======
+		})
+		return
+>>>>>>> Stashed changes
 	}
 }
 
@@ -147,4 +165,20 @@ func mapToStruct(m map[string]interface{}, s interface{}) error {
 		return err
 	}
 	return json.Unmarshal(bytes, s)
+}
+
+// Ensure the loop exits gracefully on EOF
+func main() {
+	for {
+		msg, err := ReadMessage()
+		if err == io.EOF {
+			log.Println("メッセージ読み取りエラー: EOF。ループを終了します。")
+			break
+		} else if err != nil {
+			log.Printf("メッセージ読み取りエラー: %v", err)
+			continue
+		}
+		HandleMessage(msg)
+	}
+	log.Println("アプリケーション終了。")
 }
