@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from '@extension/ui';
 import { AssistantResponse } from '../../../../types/types';
 
@@ -9,20 +9,14 @@ interface ListAssistantResponseProps {
 }
 
 const ListAssistantResponse: React.FC<ListAssistantResponseProps> = ({ responses, onSelect, onRemove }) => {
-  const [responseList, setResponseList] = useState<AssistantResponse[]>(responses);
-
-  useEffect(() => {
-    setResponseList(responses);
-  }, [responses]);
-
   return (
     <div className="text-left">
       <h3 className="text-md font-semibold mb-2">Responses</h3>
-      {responseList.length === 0 ? (
+      {responses.length === 0 ? (
         <p className="text-sm text-gray-500">No responses stored.</p>
       ) : (
         <ul className="space-y-1 overflow-y-auto max-h-64">
-          {responseList.map(response => {
+          {responses.map(response => {
             const date = new Date(response.epochTime);
             const timeZone = 'Asia/Tokyo';
             const zonedDate = new Intl.DateTimeFormat('en-US', {

@@ -40,22 +40,11 @@ export const useCodeSnippet = (htmlContent: string): UseCodeSnippetResult => {
         }
       }
 
-      // Ensure the path is included in the code content as a comment
-      if (fullPath && !codeText.includes(fullPath)) {
-        // Prepend the path as a comment
-        const updatedCode = `${codeText}`;
-        extractedSnippets.push({
-          content: updatedCode,
-          fileName,
-          fullPath,
-        });
-      } else {
-        extractedSnippets.push({
-          content: codeText,
-          fileName,
-          fullPath,
-        });
-      }
+      extractedSnippets.push({
+        content: codeText,
+        fileName,
+        fullPath,
+      });
     });
 
     return extractedSnippets;
