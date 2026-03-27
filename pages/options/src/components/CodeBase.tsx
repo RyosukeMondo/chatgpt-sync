@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import CodeTab from './CodeTab';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Tree from 'rc-tree';
 import 'rc-tree/assets/index.css';
 import CodeBaseOperationPanel from './CodeBaseOperationPanel';
 import { sendGetCodeTree } from './communication/sendGetCodeTree';
-import { codeTreeStorage } from '@extension/storage';
-import { codeBasePathStorage } from '@extension/storage';
-import { PromptStorage } from '@extension/storage';
-import { codeContentsStorage } from '@extension/storage';
-import { assistantWaitingStorage } from '@extension/storage';
-import { assistantResponseStorage } from '@extension/storage';
-import { useStorage } from '@extension/shared';
+import {
+  codeTreeStorage,
+  codeBasePathStorage,
+  PromptStorage,
+  codeContentsStorage,
+  assistantResponseStorage,
+} from '@extension/storage';
+import { assistantWaitingStorage } from '@extension/storage/lib/impl/assistantWaitingStorage';
 import CodePreview from './CodePreview';
 
 interface TreeNode {
@@ -27,14 +27,20 @@ const CodeBase: React.FC = () => {
   const [prompt, setPrompt] = useState<string>('');
   const [selectedKeys, setSelectedKeys] = useState<React.Key[]>();
   const [statusMessage, setStatusMessage] = useState<string>('');
-  const storedResponses = useStorage(assistantResponseStorage);
-  const [lastResponseCount, setLastResponseCount] = useState<number>(0);
 
+  // Track timers so they can be cleaned up on unmount
+  const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup all timers on unmount
   useEffect(() => {
-    if (Array.isArray(storedResponses)) {
-      setLastResponseCount(storedResponses.length);
-    }
-  }, [storedResponses]);
+    return () => {
+      if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchInitialCodeTree = async () => {
@@ -52,7 +58,6 @@ const CodeBase: React.FC = () => {
   useEffect(() => {
     const fetchTargetPath = async () => {
       const path = await codeBasePathStorage.getCodeBasePath();
-      console.log('Loaded codeBasePath:', path);
       setTargetPath(path || '/your/target/path');
     };
     fetchTargetPath();
@@ -88,19 +93,17 @@ const CodeBase: React.FC = () => {
     return root.children || [];
   };
 
-  const onSelect = (keys: React.Key[], info: any) => {
-    console.log('Selected:', keys, info);
-    setSelectedKeys(keys);
+  const onSelect = (_keys: React.Key[], info: { selectedNodes: { isLeaf?: boolean; key: string }[] }) => {
+    setSelectedKeys(_keys);
     const leafPaths = info.selectedNodes
-      .filter((node: any) => node.isLeaf)
-      .map((node: any) => node.key.replace('root', targetPath));
+      .filter(node => node.isLeaf)
+      .map(node => node.key.replace('root', targetPath));
     setSelectedFilePaths(leafPaths);
   };
 
   const handleUpdateTree = async () => {
     try {
       await sendGetCodeTree(targetPath);
-      console.log('コードツリーが更新されました。');
       const paths = await codeTreeStorage.getPaths();
       const treeData = buildTree(paths);
       setCodeTree(treeData);
@@ -114,10 +117,24 @@ const CodeBase: React.FC = () => {
     setSelectedKeys([]);
   };
 
+  const clearWaitingTimers = useCallback(() => {
+    if (checkIntervalRef.current) {
+      clearInterval(checkIntervalRef.current);
+      checkIntervalRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
   const handleSendToTab = async () => {
-    // Show status message
+    // Clear any previous waiting timers
+    clearWaitingTimers();
+
     setStatusMessage('タブに送信しました');
-    setTimeout(() => {
+    if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+    statusTimeoutRef.current = setTimeout(() => {
       setStatusMessage('');
     }, 3000);
 
@@ -128,7 +145,6 @@ const CodeBase: React.FC = () => {
         contentsMap[item.id] = item.contents;
       });
 
-      // Filter out empty contents and format each file's content
       const selectedContents = selectedFilePaths
         .filter(path => contentsMap[path] && contentsMap[path].length > 0)
         .map(path => ({
@@ -141,54 +157,36 @@ const CodeBase: React.FC = () => {
         return;
       }
 
-      // Create the code block with file paths and contents
       const codeBlocks = selectedContents.map(file => `// Path: ${file.path}\n${file.content}`).join('\n\n');
 
-      // Construct the final prompt with the required prefix
       const prefixPrompt = 'Below is the current implementation. Please review and suggest improvements:';
       const pathInstructionPrompt = '(must include // Path: {actual path} inside your generated code)';
       const combinedPrompt = [prompt || prefixPrompt, pathInstructionPrompt, codeBlocks].filter(Boolean).join('\n\n');
 
-      // Store prompt in storage
-      console.log('CodeBase - Setting prompt to storage:', combinedPrompt);
       await PromptStorage.setPrompt(combinedPrompt);
-      console.log('CodeBase - Prompt successfully stored');
-
-      // Set waiting state in storage
-      console.log('CodeBase - About to set waiting state to true');
       await assistantWaitingStorage.set(true);
-      console.log('CodeBase - Waiting state set to true');
 
-      // Store the current responses for comparison
       const currentResponses = await assistantResponseStorage.get();
       const initialResponsesJson = JSON.stringify(currentResponses);
-      console.log('Initial responses:', initialResponsesJson);
 
-      // Set up an interval to check for response changes
-      const checkInterval = setInterval(async () => {
+      checkIntervalRef.current = setInterval(async () => {
         const newResponses = await assistantResponseStorage.get();
         const newResponsesJson = JSON.stringify(newResponses);
 
         if (newResponsesJson !== initialResponsesJson) {
-          // Responses have changed, clear waiting state
-          console.log('CodeBase - Responses changed, setting waiting state to false');
           await assistantWaitingStorage.set(false);
-          clearInterval(checkInterval);
+          clearWaitingTimers();
         }
-      }, 1000); // Check every second
+      }, 1000);
 
-      // Set a timeout to clear waiting state after 30 seconds to prevent indefinite waiting
-      setTimeout(async () => {
-        clearInterval(checkInterval);
-        console.log('CodeBase - Timeout reached, setting waiting state to false');
+      timeoutRef.current = setTimeout(async () => {
+        clearWaitingTimers();
         await assistantWaitingStorage.set(false);
       }, 30000);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to update prompt:', error);
-      // Make sure to end waiting state even if there's an error
-      console.log('CodeBase - About to set waiting state to false (error case)');
+      clearWaitingTimers();
       await assistantWaitingStorage.set(false);
-      console.log('CodeBase - Waiting state set to false (error case)');
     }
   };
 
