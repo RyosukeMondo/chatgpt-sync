@@ -3,7 +3,7 @@ import { assistantResponseStorage } from '@extension/storage';
 import { useStorage } from './useStorage';
 import { htmlToText } from 'html-to-text';
 import { AssistantResponse } from '../../../../types/types';
-import useConvertToMarkdown from './useConvertToMarkdown';
+import { convertHtmlToMarkdown } from './useConvertToMarkdown';
 
 const sentResponseIds = new Set<string>();
 const STABILITY_THRESHOLD_MS = 3000; // 3 seconds of no changes
@@ -28,7 +28,7 @@ function extractAssistantResponses(): AssistantResponse[] {
         content: responseText,
         summary,
         epochTime,
-        markdown: useConvertToMarkdown(responseText),
+        markdown: convertHtmlToMarkdown(responseText),
       });
       sentResponseIds.add(id);
     }
@@ -104,7 +104,7 @@ export function useExtractAssistantResponse() {
           content: responseText,
           summary,
           epochTime: now,
-          markdown: useConvertToMarkdown(responseText),
+          markdown: convertHtmlToMarkdown(responseText),
         };
 
         // Store the response
@@ -140,7 +140,7 @@ export function useExtractAssistantResponse() {
                 content: responseText,
                 summary,
                 epochTime,
-                markdown: useConvertToMarkdown(responseText),
+                markdown: convertHtmlToMarkdown(responseText),
               };
               sentResponseIds.add(uniqueId);
               // Ensure storedResponses is an array before spreading
