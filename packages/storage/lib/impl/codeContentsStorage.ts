@@ -27,12 +27,13 @@ export const codeContentsStorage: CodeContentsStorageType = {
     try {
       const current = await storage.get();
       const index = current.findIndex(item => item.id === content.id);
+      let updated: CodeContents[];
       if (index !== -1) {
-        current[index].contents = content.contents;
+        updated = current.map((item, i) => (i === index ? { ...item, contents: content.contents } : item));
       } else {
-        current.push(content);
+        updated = [...current, content];
       }
-      await storage.set(current);
+      await storage.set(updated);
     } catch (error) {
       console.error('Failed to upsert contents:', error);
     }
