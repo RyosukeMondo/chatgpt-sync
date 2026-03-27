@@ -43,6 +43,7 @@ export function useExtractAssistantResponse() {
   const storedResponses = useStorage(assistantResponseStorage);
   const [isObserving, setIsObserving] = useState(false);
   const observerRef = useRef<MutationObserver | null>(null);
+  const bodyObserverRef = useRef<MutationObserver | null>(null);
   const contentStatesRef = useRef<
     Map<
       string,
@@ -210,16 +211,23 @@ export function useExtractAssistantResponse() {
     });
 
     bodyObserver.observe(document.body, { childList: true, subtree: true });
+    bodyObserverRef.current = bodyObserver;
   }, [observeMain]);
 
   const stopObserving = useCallback(() => {
     if (observerRef.current) {
       observerRef.current.disconnect();
       observerRef.current = null;
-      setIsObserving(false);
     }
 
-    contentStatesRef.current.forEach((state, id) => {
+    if (bodyObserverRef.current) {
+      bodyObserverRef.current.disconnect();
+      bodyObserverRef.current = null;
+    }
+
+    setIsObserving(false);
+
+    contentStatesRef.current.forEach(state => {
       if (state.timeoutId) clearTimeout(state.timeoutId);
     });
     contentStatesRef.current.clear();
@@ -229,6 +237,9 @@ export function useExtractAssistantResponse() {
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
+      }
+      if (bodyObserverRef.current) {
+        bodyObserverRef.current.disconnect();
       }
       contentStatesRef.current.forEach(state => {
         if (state.timeoutId) clearTimeout(state.timeoutId);
