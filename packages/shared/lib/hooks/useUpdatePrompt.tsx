@@ -2,15 +2,23 @@ import { useEffect } from 'react';
 import { PromptStorage } from '@extension/storage';
 import { useStorage } from './useStorage';
 
+const SEND_BUTTON_SELECTORS = [
+  '[data-testid="send-button"]',
+  'button[aria-label="Send prompt"]',
+  'button[aria-label="プロンプトを送信する"]',
+];
+
 const clickSendButton = () => {
   setTimeout(() => {
-    const sendButton = document.querySelector('[aria-label="プロンプトを送信する"]') as HTMLElement;
-    if (sendButton) {
-      console.log('Send button found, clicking...');
-      sendButton.click();
-    } else {
-      console.log('Send button not found');
+    for (const selector of SEND_BUTTON_SELECTORS) {
+      const sendButton = document.querySelector(selector) as HTMLElement;
+      if (sendButton) {
+        console.log(`Send button found via ${selector}, clicking...`);
+        sendButton.click();
+        return;
+      }
     }
+    console.log('Send button not found with any known selector');
   }, 1000);
 };
 
