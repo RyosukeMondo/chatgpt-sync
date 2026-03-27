@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -8,27 +9,59 @@ import (
 	"sync"
 )
 
-// ファイルを保存する
+// ValidatePath resolves a path to its absolute, symlink-resolved form and
+// rejects paths containing traversal sequences. Returns the cleaned path.
+func ValidatePath(path string) (string, error) {
+	cleaned := filepath.Clean(path)
+
+	// Reject paths that still contain traversal after cleaning
+	if strings.Contains(cleaned, "..") {
+		return "", fmt.Errorf("path traversal detected: %s", path)
+	}
+
+	// Ensure the path is absolute
+	if !filepath.IsAbs(cleaned) {
+		return "", fmt.Errorf("relative paths are not allowed: %s", path)
+	}
+
+	return cleaned, nil
+}
+
+// SaveToFile writes code to the given absolute file path.
+// The path must be absolute and must not contain traversal sequences.
 func SaveToFile(path string, code string) error {
-	dir := filepath.Dir(path)
-	err := os.MkdirAll(dir, os.ModePerm)
+	cleanPath, err := ValidatePath(path)
 	if err != nil {
-		log.Printf("パス %s のディレクトリ作成エラー: %v", path, err)
+		log.Printf("パス検証エラー: %v", err)
 		return err
 	}
 
-	err = os.WriteFile(path, []byte(code), 0644)
+	dir := filepath.Dir(cleanPath)
+	err = os.MkdirAll(dir, 0750)
 	if err != nil {
-		log.Printf("ファイル %s への書き込みエラー: %v", path, err)
+		log.Printf("パス %s のディレクトリ作成エラー: %v", cleanPath, err)
 		return err
 	}
 
-	log.Printf("ファイルを正常に保存しました: %s", path)
+	err = os.WriteFile(cleanPath, []byte(code), 0644)
+	if err != nil {
+		log.Printf("ファイル %s への書き込みエラー: %v", cleanPath, err)
+		return err
+	}
+
+	log.Printf("ファイルを正常に保存しました: %s", cleanPath)
 	return nil
 }
 
-// コードツリーを取得する
+// GetCodeTree recursively lists all non-binary files under the given absolute path.
 func GetCodeTree(path string) ([]string, error) {
+	cleanPath, err := ValidatePath(path)
+	if err != nil {
+		log.Printf("パス検証エラー: %v", err)
+		return nil, err
+	}
+	path = cleanPath
+
 	var files []string
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
@@ -103,11 +136,17 @@ func GetCodeTree(path string) ([]string, error) {
 	return files, nil
 }
 
-// ファイルの内容を取得する
+// GetContents reads and returns the contents of the file at the given absolute path.
 func GetContents(path string) (string, error) {
-	content, err := os.ReadFile(path)
+	cleanPath, err := ValidatePath(path)
 	if err != nil {
-		log.Printf("ファイル %s の読み込みエラー: %v", path, err)
+		log.Printf("パス検証エラー: %v", err)
+		return "", err
+	}
+
+	content, err := os.ReadFile(cleanPath)
+	if err != nil {
+		log.Printf("ファイル %s の読み込みエラー: %v", cleanPath, err)
 		return "", err
 	}
 	return string(content), nil
