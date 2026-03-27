@@ -14,18 +14,18 @@ const Popup = () => {
   const injectContentScript = async () => {
     const [tab] = await chrome.tabs.query({ currentWindow: true, active: true });
 
-    if (tab.url?.startsWith('about:') || tab.url?.startsWith('chrome:')) {
+    if (!tab?.id || tab.url?.startsWith('about:') || tab.url?.startsWith('chrome:')) {
       chrome.notifications.create('inject-error', notificationOptions);
       return;
     }
 
     try {
       await chrome.scripting.executeScript({
-        target: { tabId: tab.id! },
+        target: { tabId: tab.id },
         files: ['/content-runtime/index.iife.js'],
       });
-    } catch (err: any) {
-      if (err.message.includes('Cannot access a chrome:// URL')) {
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('Cannot access a chrome:// URL')) {
         chrome.notifications.create('inject-error', notificationOptions);
       }
     }
